@@ -37,7 +37,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Top Admin ControlControl Button */}
+          {/* Top Admin Control Button */}
           <button
             onClick={() => {
               soundEngine.playTargetActivate();
@@ -46,7 +46,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600/30 to-purple-600/30 hover:from-pink-600/50 hover:to-purple-600/50 backdrop-blur-md border border-pink-500/40 hover:border-pink-400 text-pink-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-pink-400" />
-            <span>Admin ControlControl</span>
+            <span>Admin Control</span>
             <Lock className="w-3.5 h-3.5 text-pink-400/70 ml-0.5" />
           </button>
 
