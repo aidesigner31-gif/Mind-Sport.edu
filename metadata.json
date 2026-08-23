@@ -1,0 +1,6 @@
+{
+  "name": "Mind Sport",
+  "description": "AAA Smart Boxing Training Machine for Mental Arithmetic featuring interactive 3D hardware simulation, flash card memory mode, multi-player, esports tournament mode, and teacher analytics dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
