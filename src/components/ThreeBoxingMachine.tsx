@@ -532,90 +532,106 @@ export const ThreeBoxingMachine: React.FC<ThreeBoxingMachineProps> = ({
 
       {/* Holographic Center Screen HUD Overlay (Overlaid in middle of machine) */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center justify-center text-center z-10">
-        {/* Flash Card Token Presentation */}
-        {activeToken && activeToken.value !== '+' ? (
-          <div className="flex flex-col items-center animate-in zoom-in-50 duration-200">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-400 font-black mb-1 drop-shadow-[0_0_8px_#00f0ff]">
-              FLASH CARD
-            </div>
-            {(() => {
-              const rawVal = (activeToken.value || '').trim();
-              let displayVal = rawVal.replace(/^\+/, '');
-              if (displayVal.startsWith('_')) {
-                displayVal = `-${displayVal.slice(1)}`;
-              }
-              const isNegative = displayVal.startsWith('-');
+        {(() => {
+          // Token formatting
+          const rawTokenVal = (activeToken && activeToken.value !== '+' ? activeToken.value : '').trim();
+          let displayTokenVal = rawTokenVal.replace(/^\+/, '');
+          if (displayTokenVal.startsWith('_')) {
+            displayTokenVal = `-${displayTokenVal.slice(1)}`;
+          }
+          const isTokenNegative = displayTokenVal.startsWith('-');
 
-              return (
-                <div
-                  className={`px-6 py-2.5 sm:px-8 sm:py-3 rounded-xl bg-slate-950/95 border-2 ${
-                    isNegative
-                      ? 'border-rose-400 text-rose-300 shadow-[0_0_25px_rgba(244,63,94,0.4)]'
-                      : 'border-cyan-400 text-cyan-200 shadow-[0_0_25px_rgba(0,240,255,0.4)]'
-                  } backdrop-blur-2xl font-black text-3xl sm:text-4xl tracking-tight min-w-[100px] sm:min-w-[130px] flex items-center justify-center`}
-                >
-                  {displayVal}
-                </div>
-              );
-            })()}
-          </div>
-        ) : isSubmitted ? (
-          <div className="flex flex-col items-center animate-in zoom-in-50 duration-200">
-            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 mb-1 drop-shadow">
-              STATUS
-            </div>
-            <div className="flex items-center gap-2 bg-emerald-950/95 border-2 border-emerald-400 px-5 py-2.5 rounded-xl shadow-[0_0_25px_rgba(16,185,129,0.4)] backdrop-blur-2xl min-w-[120px] justify-center text-emerald-300 font-black text-sm sm:text-base">
-              ✓ تم إرسال الإجابة
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400/90 drop-shadow">
-              ANSWER / النتيجة
-            </div>
-            <div className="flex items-center justify-between gap-3 bg-slate-950/95 border-2 border-cyan-500/50 px-4 py-2 sm:px-6 sm:py-2 rounded-xl shadow-[0_0_25px_rgba(0,240,255,0.35)] backdrop-blur-2xl min-w-[130px] sm:min-w-[160px]">
-              <span className={`text-xl sm:text-2xl font-black tracking-widest ${userInputDigits ? 'text-cyan-300 drop-shadow-[0_0_12px_#00f0ff]' : 'text-slate-500'}`}>
-                {userInputDigits || 'ANSWER'}
-              </span>
-              {onClear && userInputDigits ? (
-                <button
-                  type="button"
-                  onClick={onClear}
-                  className="text-slate-400 hover:text-white p-0.5 rounded transition-all pointer-events-auto"
-                  title="مسح / Clear"
-                >
-                  <Delete className="w-4 h-4" />
-                </button>
-              ) : null}
-            </div>
+          // Header Title
+          const headerTitle = activeToken && activeToken.value !== '+'
+            ? 'SPEED DIGIT'
+            : isSubmitted
+            ? 'STATUS'
+            : 'SPEED DIGIT';
 
-            {/* Quick HUD SUBMIT action control */}
-            {interactive && !isSubmitted && onSubmitAnswer && (
-              <div className="flex items-center justify-center mt-1 pointer-events-auto">
-                <button
-                  type="button"
-                  disabled={!userInputDigits}
-                  onClick={onSubmitAnswer}
-                  className={`px-6 py-1.5 rounded-xl border-2 font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5 ${
-                    !userInputDigits
-                      ? 'border-slate-700 text-slate-400 bg-slate-900/80 opacity-60 cursor-not-allowed'
-                      : 'border-cyan-400 text-slate-950 bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_20px_rgba(0,240,255,0.6)]'
-                  }`}
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  SUBMIT
-                </button>
+          // Color & Styling Scheme
+          let boxBorder = 'border-cyan-400 text-cyan-200 shadow-[0_0_18px_rgba(0,240,255,0.4)]';
+          if (flashStatus === 'correct') {
+            boxBorder = 'border-emerald-400 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.5)]';
+          } else if (flashStatus === 'wrong') {
+            boxBorder = 'border-rose-400 text-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.5)]';
+          } else if (isSubmitted) {
+            boxBorder = 'border-emerald-400 text-emerald-300 shadow-[0_0_18px_rgba(16,185,129,0.4)]';
+          } else if (activeToken && isTokenNegative) {
+            boxBorder = 'border-rose-400 text-rose-300 shadow-[0_0_18px_rgba(244,63,94,0.4)]';
+          }
+
+          // Value inside rectangle
+          let displayedValue = '';
+          if (activeToken && activeToken.value !== '+') {
+            displayedValue = displayTokenVal;
+          } else if (isSubmitted) {
+            displayedValue = `✓ ${userInputDigits || ''}`;
+          } else {
+            displayedValue = userInputDigits || '';
+          }
+
+          return (
+            <div className="flex flex-col items-center">
+              {/* Header Label with compact height matching Speed Digit */}
+              <div className="text-[8px] sm:text-[9px] uppercase tracking-[0.18em] text-cyan-400 font-black mb-1 drop-shadow-[0_0_6px_#00f0ff] h-3 flex items-center justify-center whitespace-nowrap">
+                {headerTitle}
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Circular Countdown Ring Gauge */}
+              {/* Exact Fixed Shape & Compact Size Speed Digit Rectangle Screen */}
+              <div
+                className={`relative w-[78px] sm:w-[92px] h-[34px] sm:h-[40px] rounded-lg bg-slate-950/95 border-[1.5px] ${boxBorder} backdrop-blur-2xl font-black text-lg sm:text-2xl tracking-tight flex items-center justify-center select-none transition-colors duration-150`}
+              >
+                {displayedValue ? (
+                  <span className="truncate px-1 drop-shadow-[0_0_8px_currentColor]">
+                    {displayedValue}
+                  </span>
+                ) : (
+                  <span className="text-cyan-400/40 text-base sm:text-lg font-black animate-pulse">
+                    _
+                  </span>
+                )}
+
+                {/* Optional Clear Button anchored in corner without changing rectangle size */}
+                {!activeToken && !isSubmitted && userInputDigits && onClear && (
+                  <button
+                    type="button"
+                    onClick={onClear}
+                    className="absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-rose-400 transition-all pointer-events-auto shadow"
+                    title="مسح / Clear"
+                  >
+                    <Delete className="w-2.5 h-2.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick HUD SUBMIT action control below the fixed rectangle */}
+              {interactive && !isSubmitted && onSubmitAnswer && !activeToken && (
+                <div className="flex items-center justify-center mt-1 pointer-events-auto h-5">
+                  <button
+                    type="button"
+                    disabled={!userInputDigits}
+                    onClick={onSubmitAnswer}
+                    className={`px-3 py-0.5 rounded-md border font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1 shadow-sm ${
+                      !userInputDigits
+                        ? 'border-slate-700 text-slate-400 bg-slate-900/80 opacity-50 cursor-not-allowed'
+                        : 'border-cyan-400 text-slate-950 bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_12px_rgba(0,240,255,0.5)]'
+                    }`}
+                  >
+                    <Send className="w-2 h-2" />
+                    SUBMIT
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Circular Countdown Ring Gauge with exact matching width */}
         {timeMax > 0 && (
-          <div className="mt-2.5 w-28 sm:w-36 bg-slate-950/90 h-2 rounded-full overflow-hidden border border-slate-700/80 shadow-inner">
+          <div className="mt-1 w-[78px] sm:w-[92px] bg-slate-950/90 h-1 rounded-full overflow-hidden border border-slate-700/80 shadow-inner">
             <div
               className={`h-full transition-all duration-300 ${
-                timeRemaining / timeMax < 0.3 ? 'bg-rose-500 shadow-[0_0_12px_#f43f5e]' : 'bg-cyan-400 shadow-[0_0_12px_#22d3ee]'
+                timeRemaining / timeMax < 0.3 ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-cyan-400 shadow-[0_0_8px_#22d3ee]'
               }`}
               style={{ width: `${Math.max(0, (timeRemaining / timeMax) * 100)}%` }}
             />
