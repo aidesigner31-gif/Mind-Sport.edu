@@ -106,7 +106,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="User Name"
+                placeholder="أدخل اسم المستخدم / Username"
                 autoComplete="username"
                 className="w-full bg-white/5 border border-white/15 focus:border-pink-400/60 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all"
                 autoFocus
@@ -127,7 +127,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder="••••••••"
                 autoComplete="current-password"
                 className="w-full bg-white/5 border border-white/15 focus:border-pink-400/60 rounded-2xl pl-10 pr-11 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all"
               />

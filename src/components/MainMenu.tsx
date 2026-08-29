@@ -1,28 +1,44 @@
 import React, { useState } from 'react';
 import { GameMode, LEDTheme, SoundSettings } from '../types';
 import { soundEngine } from '../utils/audio';
-import { Play, Users, Trophy, Volume2, ShieldCheck, Sparkles, Lock } from 'lucide-react';
+import { Play, Users, Trophy, Volume2, ShieldCheck, Sparkles, Lock, LogOut, GraduationCap } from 'lucide-react';
 import { AdminLoginModal } from './AdminLoginModal';
+import { UserRole } from '../utils/appAuth';
 
 interface MainMenuProps {
+  userRole?: UserRole;
   onSelectMode: (mode: GameMode) => void;
   selectedTheme: LEDTheme;
   onChangeTheme: (theme: LEDTheme) => void;
   soundSettings: SoundSettings;
   onUpdateSound: (settings: SoundSettings) => void;
+  onLogout?: () => void;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
+  userRole = 'student',
   onSelectMode,
+  selectedTheme,
+  onChangeTheme,
   soundSettings,
   onUpdateSound,
+  onLogout,
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
 
+  const handleAdminClick = () => {
+    soundEngine.playTargetActivate();
+    if (userRole === 'admin') {
+      onSelectMode('teacher-dashboard');
+    } else {
+      setShowAdminLogin(true);
+    }
+  };
+
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-between p-4 md:p-6 select-none">
-      {/* Top Header Bar / HUD with Admin ControlControl at top */}
+      {/* Top Header Bar / HUD with Admin Control and Logout at top */}
       <header className="relative z-10 w-full max-w-7xl flex items-center justify-between pt-2 pb-4 border-b border-white/10">
         <div className="flex flex-col">
           <div className="flex items-center gap-2 mb-1">
@@ -36,30 +52,58 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* User Role Badge */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-bold">
+            {userRole === 'admin' ? (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5 text-pink-400" />
+                <span className="text-pink-300">أدمن (Admin)</span>
+              </>
+            ) : (
+              <>
+                <GraduationCap className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-cyan-300">طالب (Student)</span>
+              </>
+            )}
+          </div>
+
           {/* Top Admin Control Button */}
           <button
-            onClick={() => {
-              soundEngine.playTargetActivate();
-              setShowAdminLogin(true);
-            }}
-            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600/30 to-purple-600/30 hover:from-pink-600/50 hover:to-purple-600/50 backdrop-blur-md border border-pink-500/40 hover:border-pink-400 text-pink-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] cursor-pointer"
+            onClick={handleAdminClick}
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-pink-600/30 to-purple-600/30 hover:from-pink-600/50 hover:to-purple-600/50 backdrop-blur-md border border-pink-500/40 hover:border-pink-400 text-pink-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 sm:gap-2 transition-all shadow-lg hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-pink-400" />
             <span>Admin Control</span>
-            <Lock className="w-3.5 h-3.5 text-pink-400/70 ml-0.5" />
+            {userRole !== 'admin' && <Lock className="w-3.5 h-3.5 text-pink-400/70 ml-0.5" />}
           </button>
+
 
           <button
             onClick={() => {
               soundEngine.playTargetActivate();
               setShowSettings(true);
             }}
-            className="px-4 py-2.5 rounded-2xl bg-pink-950/40 hover:bg-pink-900/40 backdrop-blur-md border border-pink-500/30 hover:border-pink-400 transition-all text-slate-200 hover:text-white flex items-center gap-2 shadow-lg shadow-pink-500/10 cursor-pointer"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-pink-950/40 hover:bg-pink-900/40 backdrop-blur-md border border-pink-500/30 hover:border-pink-400 transition-all text-slate-200 hover:text-white flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-pink-500/10 cursor-pointer"
           >
             <Volume2 className="w-4 h-4 text-pink-400" />
             <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Settings</span>
           </button>
+
+          {/* Logout Button */}
+          {onLogout && (
+            <button
+              onClick={() => {
+                soundEngine.playTargetActivate();
+                onLogout();
+              }}
+              title="تسجيل الخروج / Logout"
+              className="px-3 py-2 sm:py-2.5 rounded-2xl bg-white/5 hover:bg-rose-500/20 backdrop-blur-md border border-white/10 hover:border-rose-400/50 transition-all text-slate-400 hover:text-rose-300 flex items-center gap-1.5 cursor-pointer shadow"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-xs font-bold hidden md:inline">خروج</span>
+            </button>
+          )}
         </div>
       </header>
 

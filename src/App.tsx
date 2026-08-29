@@ -6,9 +6,13 @@ import { TwoPlayerGame } from './components/TwoPlayerGame';
 import { CompetitionMode } from './components/CompetitionMode';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { DeviceShowcase } from './components/DeviceShowcase';
+import { AppLoginGate } from './components/AppLoginGate';
+import { isAppAuthenticated, setAppAuthenticated, getAppUserRole, UserRole } from './utils/appAuth';
 import { getStoredAdminSettings, saveStoredAdminSettings } from './utils/adminSettings';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isAppAuthenticated());
+  const [userRole, setUserRole] = useState<UserRole>(() => getAppUserRole());
   const [currentMode, setCurrentMode] = useState<GameMode>('main-menu');
   const [selectedTheme, setSelectedTheme] = useState<LEDTheme>('cyber-neon');
   const [soundSettings, setSoundSettings] = useState<SoundSettings>({
@@ -24,6 +28,28 @@ export default function App() {
     setAdminSettings(newSettings);
     saveStoredAdminSettings(newSettings);
   };
+
+  const handleLoginSuccess = (role: UserRole) => {
+    setIsAuthenticated(true);
+    setUserRole(role);
+    if (role === 'admin') {
+      setCurrentMode('teacher-dashboard');
+    } else {
+      setCurrentMode('main-menu');
+    }
+  };
+
+  const handleLogout = () => {
+    setAppAuthenticated(false);
+    setIsAuthenticated(false);
+    setUserRole('student');
+    setCurrentMode('main-menu');
+  };
+
+  // If user is not authenticated, show the Login Gate Lock Screen
+  if (!isAuthenticated) {
+    return <AppLoginGate onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div
@@ -51,11 +77,13 @@ export default function App() {
       <div className="relative z-10 w-full flex-1 flex flex-col">
         {currentMode === 'main-menu' && (
           <MainMenu
+            userRole={userRole}
             onSelectMode={(mode) => setCurrentMode(mode)}
             selectedTheme={selectedTheme}
             onChangeTheme={(t) => setSelectedTheme(t)}
             soundSettings={soundSettings}
             onUpdateSound={(s) => setSoundSettings(s)}
+            onLogout={handleLogout}
           />
         )}
 
@@ -101,4 +129,5 @@ export default function App() {
     </div>
   );
 }
+
 
