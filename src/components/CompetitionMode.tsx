@@ -156,8 +156,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
         setIsLive(false);
         soundEngine.playVictorySound();
 
-        const correctRounds = Math.max(0, totalRounds - userMistakes);
-        const acc = totalRounds > 0 ? Math.round((correctRounds / totalRounds) * 100) : 0;
+        const correctRounds = Math.min(totalRounds, Math.max(0, totalRounds - userMistakes));
+        const acc = totalRounds > 0 ? Math.min(100, Math.max(0, Math.round((correctRounds / totalRounds) * 100))) : 0;
         if (acc >= 70) {
           confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
         }
@@ -244,8 +244,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
           score={userScore}
           timeSeconds={(totalRounds * 3.8).toFixed(2)}
           totalQuestions={totalRounds}
-          correctCount={Math.max(1, totalRounds - userMistakes)}
-          wrongCount={userMistakes}
+          correctCount={Math.min(totalRounds, Math.max(0, totalRounds - userMistakes))}
+          wrongCount={Math.min(totalRounds, userMistakes)}
           notAnsweredCount={0}
           onRetry={startChampionship}
           onMenu={onBackToMenu}

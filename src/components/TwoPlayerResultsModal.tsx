@@ -58,9 +58,9 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
   const p1TotalAtt = p1Correct + p1Wrong;
   const p2TotalAtt = p2Correct + p2Wrong;
 
-  const p1Acc = p1TotalAtt > 0 ? Math.round((p1Correct / p1TotalAtt) * 100) : (totalQuestions > 0 ? Math.round((p1Correct / totalQuestions) * 100) : 0);
-  const p2Acc = p2TotalAtt > 0 ? Math.round((p2Correct / p2TotalAtt) * 100) : (totalQuestions > 0 ? Math.round((p2Correct / totalQuestions) * 100) : 0);
-  const maxAcc = Math.max(p1Acc, p2Acc);
+  const p1Acc = Math.min(100, Math.max(0, p1TotalAtt > 0 ? Math.round((p1Correct / p1TotalAtt) * 100) : (totalQuestions > 0 ? Math.round((p1Correct / totalQuestions) * 100) : 0)));
+  const p2Acc = Math.min(100, Math.max(0, p2TotalAtt > 0 ? Math.round((p2Correct / p2TotalAtt) * 100) : (totalQuestions > 0 ? Math.round((p2Correct / totalQuestions) * 100) : 0)));
+  const maxAcc = Math.min(100, Math.max(p1Acc, p2Acc));
 
   const totalQ = totalQuestions || 1;
   const p1AvgSpeed = (realP1Time / totalQ).toFixed(1);

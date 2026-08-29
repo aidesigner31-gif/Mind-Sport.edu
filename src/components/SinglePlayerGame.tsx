@@ -66,7 +66,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
   };
 
   const totalAttempted = correctCount + wrongCount;
-  const liveAccuracyPct = totalAttempted > 0 ? Math.round((correctCount / totalAttempted) * 100) : 100;
+  const liveAccuracyPct = totalAttempted > 0 ? Math.min(100, Math.max(0, Math.round((correctCount / totalAttempted) * 100))) : 100;
 
   // Generate Questions via API or Fallback
   const loadQuestions = async (lvl: number, complex: boolean) => {

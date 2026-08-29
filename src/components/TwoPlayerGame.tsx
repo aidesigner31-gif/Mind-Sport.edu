@@ -91,10 +91,10 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
   };
 
   const p1TotalAtt = p1Correct + p1Wrong;
-  const p1LiveAcc = p1TotalAtt > 0 ? Math.round((p1Correct / p1TotalAtt) * 100) : 100;
+  const p1LiveAcc = p1TotalAtt > 0 ? Math.min(100, Math.max(0, Math.round((p1Correct / p1TotalAtt) * 100))) : 100;
 
   const p2TotalAtt = p2Correct + p2Wrong;
-  const p2LiveAcc = p2TotalAtt > 0 ? Math.round((p2Correct / p2TotalAtt) * 100) : 100;
+  const p2LiveAcc = p2TotalAtt > 0 ? Math.min(100, Math.max(0, Math.round((p2Correct / p2TotalAtt) * 100))) : 100;
 
   // Load / Generate Synchronized Questions
   const loadQuestions = async (lvl: number, complex: boolean) => {

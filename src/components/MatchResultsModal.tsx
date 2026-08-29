@@ -27,10 +27,10 @@ export const MatchResultsModal: React.FC<MatchResultsModalProps> = ({
   onRetry,
   onMenu,
 }) => {
-  const total = totalQuestions || 1;
-  const correctPct = Math.round((correctCount / total) * 100);
-  const wrongPct = Math.round((wrongCount / total) * 100);
-  const unansPct = Math.max(0, 100 - correctPct - wrongPct);
+  const total = Math.max(1, totalQuestions || 1);
+  const correctPct = Math.min(100, Math.max(0, Math.round((correctCount / total) * 100)));
+  const wrongPct = Math.min(100, Math.max(0, Math.round((wrongCount / total) * 100)));
+  const unansPct = Math.max(0, Math.min(100, 100 - correctPct - wrongPct));
 
   useEffect(() => {
     // Launch celebratory fireworks only if score/accuracy is 70% or higher
