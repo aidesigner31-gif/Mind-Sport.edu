@@ -292,9 +292,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               {/* Active Speed Readout Badge */}
               <div className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 border border-emerald-400/50 text-emerald-200 font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.35)]">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>السرعة المعتمدة للعبة حالياً:</span>
-                <span className="text-white text-sm font-black">
-                  {activeSpeedKey === 'slow' ? '🐢 بطيء (1.2s)' : activeSpeedKey === 'fast' ? '🚀 سريع (0.4s)' : activeSpeedKey === 'normal' ? '⚡ عادي (0.8s)' : `${activeCalculatedFlashDuration}ms`}
+                <span>المدة المعتمدة حالياً:</span>
+                <span className="text-white text-sm font-black font-mono">
+                  {(adminSettings.flashIntervalMs / 1000).toFixed(2)}s ({adminSettings.flashIntervalMs}ms) • {adminSettings.timeLimitSeconds}s إجابة
                 </span>
               </div>
             </div>
@@ -307,127 +307,123 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 </div>
                 <div className="text-right flex-1">
                   <div className="text-sm font-black text-white">
-                    ✅ تم اعتماد وتطبيق السرعة بنجاح على اللعبة كاملة!
+                    ✅ تم اعتماد وتطبيق السرعة والمدة بنجاح على اللعبة كاملة!
                   </div>
                   <div className="text-xs text-emerald-300">
-                    جميع اللاعبين في جميع الأنماط سيلعبون بسرعة: <span className="font-black text-white underline">{THREE_SPEED_PRESETS[currentSpeedKey as SpeedPresetKey]?.nameAr || 'المخصصة'} ({stagedCalculatedFlashDuration}ms)</span> ولا يمكنهم تغييرها.
+                    جميع اللاعبين في جميع الأنماط سيلعبون بمدة وميض: <span className="font-black text-white font-mono underline">{(stagedSettings.flashIntervalMs / 1000).toFixed(2)} ثانية ({stagedSettings.flashIntervalMs}ms)</span> ووقت إجابة: <span className="font-black text-white font-mono underline">{stagedSettings.timeLimitSeconds} ثانية</span>.
                   </div>
                 </div>
               </div>
             )}
 
-            {/* The 3 Speeds Cards Section */}
-            <div className="mb-5">
-              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-3 flex items-center justify-between">
-                <span>اختر السرعة المطلوبة (3 سرعات) / SELECT GAME SPEED:</span>
-                <span className="text-[10px] text-pink-400 font-normal">التحكم حصري للأدمن فقط</span>
-              </label>
+            {/* ⏱️ SPEED & DURATION COUNTER CONTROLLERS ⏱️ */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+              
+              {/* 1. Flash Duration Counter (عداد مدة وميض الرقم) */}
+              <div className="bg-slate-950/80 border-2 border-cyan-500/40 hover:border-cyan-400/70 transition-all rounded-2xl p-4 sm:p-5 shadow-[0_0_25px_rgba(6,182,212,0.15)] flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 text-cyan-400 fill-cyan-400" />
+                      عداد سرعة وميض الرقم (Flash Duration)
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-bold">
+                      {stagedSettings.flashIntervalMs < 500 ? '⚡ فائق السرعة' : stagedSettings.flashIntervalMs <= 900 ? '🎯 متوازن قياسي' : '🐢 هادئ للمبتدئين'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mb-4">
+                    المدة الزمنية لظهور كل رقم في المسألة على الشاشة قبل الانتقال للرقم التالي
+                  </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                {(['slow', 'normal', 'fast'] as SpeedPresetKey[]).map((key) => {
-                  const preset = THREE_SPEED_PRESETS[key];
-                  const isSelected = currentSpeedKey === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => applySpeedPreset(key)}
-                      className={`relative p-4 rounded-2xl border text-right transition-all flex flex-col justify-between cursor-pointer group ${
-                        isSelected
-                          ? `bg-gradient-to-b ${preset.bgGradient} ${preset.borderColor} border-2 shadow-[0_0_25px_rgba(236,72,153,0.3)] scale-[1.02]`
-                          : 'bg-white/5 border-white/10 hover:border-white/25 hover:bg-white/[0.08]'
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-pink-500/20 border border-pink-400 text-pink-300 text-[10px] font-black flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-pink-400" />
-                          <span>محددة</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <span className="text-2xl">{preset.icon}</span>
-                        <div>
-                          <div className="text-sm font-black text-white group-hover:text-pink-300 transition-colors">
-                            {preset.nameAr}
-                          </div>
-                          <div className="text-[10px] font-semibold text-slate-400 uppercase">
-                            {preset.nameEn}
-                          </div>
-                        </div>
-                      </div>
-
-                      <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
-                        {preset.taglineAr}
-                      </p>
-
-                      <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-[10px] font-mono">
-                        <span className="text-cyan-300 font-bold">
-                          وميض: {preset.flashIntervalMs}ms
-                        </span>
-                        <span className="text-purple-300 font-bold">
-                          وقت: {preset.timeLimitSeconds}s
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Collapsible Advanced Fine-Tuning Sliders */}
-            <div className="mb-5">
-              <button
-                type="button"
-                onClick={() => setShowAdvancedSliders(!showAdvancedSliders)}
-                className="w-full py-2 px-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between text-xs font-bold text-slate-300 transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-3.5 h-3.5 text-pink-400" />
-                  <span>تعديل يدوي دقيق للسرعات (متقدم) / Advanced Custom Fine-Tuning</span>
-                </div>
-                {showAdvancedSliders ? (
-                  <ChevronUp className="w-4 h-4 text-slate-400" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-slate-400" />
-                )}
-              </button>
-
-              {showAdvancedSliders && (
-                <div className="mt-3 p-4 rounded-2xl bg-black/40 border border-white/10 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Speed Multiplier Slider */}
-                  <div className="bg-white/5 p-3.5 rounded-xl border border-white/10">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold text-slate-300 uppercase">معامل السرعة</span>
-                      <span className="text-xs font-black text-pink-400">{stagedSettings.gameSpeedMultiplier}x</span>
+                  {/* Main Digital Counter Stepper Display */}
+                  <div className="flex items-center justify-between gap-3 bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-3 mb-4 shadow-inner">
+                    {/* Decrement Buttons */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playTargetActivate();
+                          setStagedSettings((prev) => ({
+                            ...prev,
+                            flashIntervalMs: Math.max(100, prev.flashIntervalMs - 100),
+                          }));
+                        }}
+                        className="w-10 h-10 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white border border-cyan-500/40 flex items-center justify-center font-black text-lg transition-all active:scale-95 cursor-pointer"
+                        title="إنقاص 0.1 ثانية (-100ms)"
+                      >
+                        -
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playTargetActivate();
+                          setStagedSettings((prev) => ({
+                            ...prev,
+                            flashIntervalMs: Math.max(100, prev.flashIntervalMs - 50),
+                          }));
+                        }}
+                        className="px-2 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-cyan-200 border border-white/10 flex items-center justify-center font-bold text-[10px] transition-all active:scale-95 cursor-pointer font-mono"
+                        title="إنقاص 0.05 ثانية (-50ms)"
+                      >
+                        -50ms
+                      </button>
                     </div>
-                    <input
-                      type="range"
-                      min="0.3"
-                      max="3.0"
-                      step="0.1"
-                      value={stagedSettings.gameSpeedMultiplier}
-                      onChange={(e) =>
-                        setStagedSettings({
-                          ...stagedSettings,
-                          gameSpeedMultiplier: parseFloat(e.target.value),
-                        })
-                      }
-                      className="w-full accent-pink-500 cursor-pointer"
-                    />
-                    <div className="text-[9px] text-slate-400 mt-1">التحكم في إيقاع اللعبة العام</div>
+
+                    {/* Central Digital Readout */}
+                    <div className="text-center flex-1">
+                      <div className="text-3xl sm:text-4xl font-black font-mono text-cyan-300 tracking-tight drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]">
+                        {(stagedSettings.flashIntervalMs / 1000).toFixed(2)}
+                        <span className="text-xs sm:text-sm font-bold text-cyan-400/80 mr-1">ثانية</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-400 font-bold">
+                        {stagedSettings.flashIntervalMs} مللي ثانية (ms)
+                      </div>
+                    </div>
+
+                    {/* Increment Buttons */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playTargetActivate();
+                          setStagedSettings((prev) => ({
+                            ...prev,
+                            flashIntervalMs: Math.min(3000, prev.flashIntervalMs + 50),
+                          }));
+                        }}
+                        className="px-2 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-cyan-200 border border-white/10 flex items-center justify-center font-bold text-[10px] transition-all active:scale-95 cursor-pointer font-mono"
+                        title="زيادة 0.05 ثانية (+50ms)"
+                      >
+                        +50ms
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playTargetActivate();
+                          setStagedSettings((prev) => ({
+                            ...prev,
+                            flashIntervalMs: Math.min(3000, prev.flashIntervalMs + 100),
+                          }));
+                        }}
+                        className="w-10 h-10 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white border border-cyan-500/40 flex items-center justify-center font-black text-lg transition-all active:scale-95 cursor-pointer"
+                        title="زيادة 0.1 ثانية (+100ms)"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Flash Duration Slider */}
-                  <div className="bg-white/5 p-3.5 rounded-xl border border-white/10">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold text-slate-300 uppercase">سرعة وميض الرقم</span>
-                      <span className="text-xs font-black text-cyan-400">{stagedSettings.flashIntervalMs}ms</span>
+                  {/* Range Slider for Fast Dragging */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span>0.10s (خاطف)</span>
+                      <span>1.50s (متوسط)</span>
+                      <span>3.00s (هادئ)</span>
                     </div>
                     <input
                       type="range"
-                      min="150"
-                      max="2000"
+                      min="100"
+                      max="3000"
                       step="50"
                       value={stagedSettings.flashIntervalMs}
                       onChange={(e) =>
@@ -436,23 +432,150 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           flashIntervalMs: parseInt(e.target.value, 10),
                         })
                       }
-                      className="w-full accent-cyan-400 cursor-pointer"
+                      className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
                     />
-                    <div className="text-[9px] text-slate-400 mt-1">
-                      الوميض الفعلي: <span className="text-cyan-300 font-bold">{stagedCalculatedFlashDuration}ms</span>
+                  </div>
+                </div>
+
+                {/* Quick Selection Presets Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-4 pt-3 border-t border-white/10">
+                  <span className="text-[10px] font-bold text-slate-400 mr-1">خيارات سريعة:</span>
+                  {[
+                    { label: '0.3s (300ms)', val: 300 },
+                    { label: '0.5s (500ms)', val: 500 },
+                    { label: '0.8s (800ms)', val: 800 },
+                    { label: '1.0s (1000ms)', val: 1000 },
+                    { label: '1.2s (1200ms)', val: 1200 },
+                    { label: '1.5s (1500ms)', val: 1500 },
+                    { label: '2.0s (2000ms)', val: 2000 },
+                  ].map((chip) => (
+                    <button
+                      key={chip.val}
+                      type="button"
+                      onClick={() => {
+                        soundEngine.playTargetActivate();
+                        setStagedSettings({
+                          ...stagedSettings,
+                          flashIntervalMs: chip.val,
+                        });
+                      }}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border ${
+                        stagedSettings.flashIntervalMs === chip.val
+                          ? 'bg-cyan-400 text-slate-950 border-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-105'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. Answer Time Limit Counter (عداد وقت إجابة المسألة) */}
+              <div className="bg-slate-950/80 border-2 border-purple-500/40 hover:border-purple-400/70 transition-all rounded-2xl p-4 sm:p-5 shadow-[0_0_25px_rgba(168,85,247,0.15)] flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Gauge className="w-4 h-4 text-purple-400" />
+                      عداد وقت إجابة المسألة (Answer Time Limit)
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-500/40 text-purple-300 font-bold">
+                      {stagedSettings.timeLimitSeconds <= 6 ? '⏱️ وقت ضيق' : stagedSettings.timeLimitSeconds <= 15 ? '🎯 وقت قياسي' : '⏳ وقت مريح'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mb-4">
+                    الحد الأقصى المتاح للاعب لإدخال النتيجة وحساب العملية بعد انتهاء وميض الأرقام
+                  </p>
+
+                  {/* Main Digital Counter Stepper Display */}
+                  <div className="flex items-center justify-between gap-3 bg-slate-900/90 border border-purple-500/30 rounded-2xl p-3 mb-4 shadow-inner">
+                    {/* Decrement Buttons */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playTargetActivate();
+                          setStagedSettings((prev) => ({
+                            ...prev,
+                            timeLimitSeconds: Math.max(3, prev.timeLimitSeconds - 5),
+                          }));
+                        }}
+                        className="px-2 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-purple-200 border border-white/10 flex items-center justify-center font-bold text-[10px] transition-all active:scale-95 cursor-pointer font-mono"
+                        title="إنقاص 5 ثوانٍ"
+                      >
+                        -5s
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playTargetActivate();
+                          setStagedSettings((prev) => ({
+                            ...prev,
+                            timeLimitSeconds: Math.max(2, prev.timeLimitSeconds - 1),
+                          }));
+                        }}
+                        className="w-10 h-10 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 flex items-center justify-center font-black text-lg transition-all active:scale-95 cursor-pointer"
+                        title="إنقاص ثانية واحدة (-1s)"
+                      >
+                        -
+                      </button>
+                    </div>
+
+                    {/* Central Digital Readout */}
+                    <div className="text-center flex-1">
+                      <div className="text-3xl sm:text-4xl font-black font-mono text-purple-300 tracking-tight drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]">
+                        {stagedSettings.timeLimitSeconds}
+                        <span className="text-xs sm:text-sm font-bold text-purple-400/80 mr-1">ثوانٍ</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-400 font-bold">
+                        {stagedSettings.timeLimitSeconds} Seconds
+                      </div>
+                    </div>
+
+                    {/* Increment Buttons */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playTargetActivate();
+                          setStagedSettings((prev) => ({
+                            ...prev,
+                            timeLimitSeconds: Math.min(60, prev.timeLimitSeconds + 1),
+                          }));
+                        }}
+                        className="w-10 h-10 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 flex items-center justify-center font-black text-lg transition-all active:scale-95 cursor-pointer"
+                        title="زيادة ثانية واحدة (+1s)"
+                      >
+                        +
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playTargetActivate();
+                          setStagedSettings((prev) => ({
+                            ...prev,
+                            timeLimitSeconds: Math.min(60, prev.timeLimitSeconds + 5),
+                          }));
+                        }}
+                        className="px-2 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-purple-200 border border-white/10 flex items-center justify-center font-bold text-[10px] transition-all active:scale-95 cursor-pointer font-mono"
+                        title="زيادة 5 ثوانٍ"
+                      >
+                        +5s
+                      </button>
                     </div>
                   </div>
 
-                  {/* Question Countdown Timer Slider */}
-                  <div className="bg-white/5 p-3.5 rounded-xl border border-white/10">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold text-slate-300 uppercase">عداد وقت الإجابة</span>
-                      <span className="text-xs font-black text-purple-400">{stagedSettings.timeLimitSeconds}s</span>
+                  {/* Range Slider for Fast Dragging */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span>3s (سريع)</span>
+                      <span>15s (قياسي)</span>
+                      <span>45s (ممتد)</span>
                     </div>
                     <input
                       type="range"
                       min="3"
-                      max="30"
+                      max="45"
                       step="1"
                       value={stagedSettings.timeLimitSeconds}
                       onChange={(e) =>
@@ -461,12 +584,44 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           timeLimitSeconds: parseInt(e.target.value, 10),
                         })
                       }
-                      className="w-full accent-purple-400 cursor-pointer"
+                      className="w-full accent-purple-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
                     />
-                    <div className="text-[9px] text-slate-400 mt-1">الحد الأقصى للثواني لكل مسألة</div>
                   </div>
                 </div>
-              )}
+
+                {/* Quick Selection Presets Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-4 pt-3 border-t border-white/10">
+                  <span className="text-[10px] font-bold text-slate-400 mr-1">خيارات سريعة:</span>
+                  {[
+                    { label: '5s', val: 5 },
+                    { label: '8s', val: 8 },
+                    { label: '10s', val: 10 },
+                    { label: '12s', val: 12 },
+                    { label: '15s', val: 15 },
+                    { label: '20s', val: 20 },
+                    { label: '30s', val: 30 },
+                  ].map((chip) => (
+                    <button
+                      key={chip.val}
+                      type="button"
+                      onClick={() => {
+                        soundEngine.playTargetActivate();
+                        setStagedSettings({
+                          ...stagedSettings,
+                          timeLimitSeconds: chip.val,
+                        });
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border ${
+                        stagedSettings.timeLimitSeconds === chip.val
+                          ? 'bg-purple-400 text-slate-950 border-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.5)] scale-105'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* ⭐ THE PROMINENT ACCEPT & APPLY BUTTON ⭐ */}
@@ -480,10 +635,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <Check className="w-4 h-4 stroke-[3]" />
                 </div>
                 <span>
-                  ACCEPT & APPLY TO ENTIRE GAME / اعتماد وتطبيق السرعة على اللعبة كاملة (Accept)
+                  اعتماد وتطبيق السرعة والمدة على اللعبة كاملة / ACCEPT & APPLY
                 </span>
-                <span className="text-xs px-2.5 py-1 rounded-lg bg-slate-950/40 text-emerald-200 font-mono">
-                  {THREE_SPEED_PRESETS[currentSpeedKey as SpeedPresetKey]?.nameAr || `${stagedCalculatedFlashDuration}ms`}
+                <span className="text-xs px-3 py-1.5 rounded-xl bg-slate-950/70 text-emerald-300 font-mono font-bold border border-emerald-400/40">
+                  وميض: {(stagedSettings.flashIntervalMs / 1000).toFixed(2)}s • إجابة: {stagedSettings.timeLimitSeconds}s
                 </span>
               </button>
             </div>
