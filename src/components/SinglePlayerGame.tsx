@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { ThreeBoxingMachine } from './ThreeBoxingMachine';
 import { MatchResultsModal } from './MatchResultsModal';
+import { StartCountdown } from './StartCountdown';
 import { Question, LEDTheme, FlashCardToken, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
 import { fetchQuestionsForLevel, convertPromptSeqToTerms } from '../utils/questionsBank';
@@ -24,6 +25,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
   const [level, setLevel] = useState<number>(activeAdminSettings.targetLevel ?? 1);
   const [isComplex, setIsComplex] = useState<boolean>(activeAdminSettings.isComplexMode ?? false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
 
 
   // Question state
@@ -52,12 +54,12 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
 
   // Total elapsed time tracker
   useEffect(() => {
-    if (!isPlaying || isMatchOver) return;
+    if (!isPlaying || isMatchOver || isCountdownActive) return;
     const interval = setInterval(() => {
       setElapsedTime((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isPlaying, isMatchOver]);
+  }, [isPlaying, isMatchOver, isCountdownActive]);
 
   const formatMMSS = (sec: number): string => {
     const m = Math.floor(sec / 60);
@@ -111,11 +113,12 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
     setElapsedTime(0);
     setIsMatchOver(false);
     setIsPlaying(true);
+    setIsCountdownActive(true);
   };
 
   // Start Sequence Animation for current Question
   useEffect(() => {
-    if (!isPlaying || isMatchOver || questions.length === 0 || currentQIndex >= questions.length) return;
+    if (!isPlaying || isCountdownActive || isMatchOver || questions.length === 0 || currentQIndex >= questions.length) return;
 
     if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
@@ -156,7 +159,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
     return () => {
       if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
     };
-  }, [currentQIndex, questions, isPlaying, flashMs, qTimeLimit]);
+  }, [currentQIndex, questions, isPlaying, isCountdownActive, flashMs, qTimeLimit]);
 
 
   // Answer Countdown
@@ -483,6 +486,14 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
             />
           </div>
         </div>
+      )}
+
+      {/* 3-2-1-GO! Mental Math Countdown Overlay */}
+      {isCountdownActive && (
+        <StartCountdown
+          title={`تحدي الحساب الذهني - المستوى ${level} (${isComplex ? 'مسائل مركبة' : 'مسائل أساسية'})`}
+          onComplete={() => setIsCountdownActive(false)}
+        />
       )}
     </div>
   );

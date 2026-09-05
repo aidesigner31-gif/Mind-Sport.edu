@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { ThreeBoxingMachine } from './ThreeBoxingMachine';
 import { TwoPlayerResultsModal } from './TwoPlayerResultsModal';
+import { StartCountdown } from './StartCountdown';
 import { Question, LEDTheme, FlashCardToken, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
 import { fetchQuestionsForLevel, convertPromptSeqToTerms, formatPromptSequenceText } from '../utils/questionsBank';
@@ -35,6 +36,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
   const [level, setLevel] = useState<number>(activeAdminSettings.targetLevel ?? 1);
   const [isComplex, setIsComplex] = useState<boolean>(activeAdminSettings.isComplexMode ?? false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [isFetchingQuestions, setIsFetchingQuestions] = useState<boolean>(false);
 
@@ -77,12 +79,12 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
 
   // Match Total Elapsed Time Counter
   useEffect(() => {
-    if (!isPlaying || isGameOver) return;
+    if (!isPlaying || isGameOver || isCountdownActive) return;
     const interval = setInterval(() => {
       setElapsedTime((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isPlaying, isGameOver]);
+  }, [isPlaying, isGameOver, isCountdownActive]);
 
   const formatMMSS = (sec: number): string => {
     const m = Math.floor(sec / 60);
@@ -156,13 +158,14 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
     setElapsedTime(0);
     setIsGameOver(false);
     setIsPlaying(true);
+    setIsCountdownActive(true);
   };
 
   const seqIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sequence Player & Round Timer
   useEffect(() => {
-    if (!isPlaying || isGameOver || questions.length === 0 || currentQIndex >= questions.length) return;
+    if (!isPlaying || isCountdownActive || isGameOver || questions.length === 0 || currentQIndex >= questions.length) return;
 
     if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
@@ -204,7 +207,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
     return () => {
       if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
     };
-  }, [currentQIndex, questions, isPlaying, flashMs, qTimeLimit]);
+  }, [currentQIndex, questions, isPlaying, isCountdownActive, flashMs, qTimeLimit]);
 
   const startRoundCountdown = (limitSec: number) => {
     roundStartTimeRef.current = Date.now();
@@ -709,6 +712,14 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
             </div>
           </div>
         </div>
+      )}
+
+      {/* 3-2-1-GO! Mental Math Countdown Overlay */}
+      {isCountdownActive && (
+        <StartCountdown
+          title={`مواجهة ثنائية (Head-to-Head) - المستوى ${level} (${isComplex ? 'مسائل مركبة' : 'مسائل أساسية'})`}
+          onComplete={() => setIsCountdownActive(false)}
+        />
       )}
     </div>
   );

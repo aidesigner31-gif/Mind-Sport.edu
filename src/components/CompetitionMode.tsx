@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { ThreeBoxingMachine } from './ThreeBoxingMachine';
 import { MatchResultsModal } from './MatchResultsModal';
+import { StartCountdown } from './StartCountdown';
 import { Competitor, FlashCardToken, Question, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
 import { getLevel1Questions } from '../utils/questionsBank';
@@ -45,6 +46,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   ]);
 
   const [isTournamentOver, setIsTournamentOver] = useState<boolean>(false);
+  const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
 
   // Start Tournament
   const startChampionship = () => {
@@ -53,7 +55,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
     setUserScore(0);
     setUserMistakes(0);
     setIsTournamentOver(false);
-    loadNextRoundQuestion(0);
+    setActiveQuestion(null);
+    setIsCountdownActive(true);
   };
 
   const loadNextRoundQuestion = (roundIdx: number) => {
@@ -334,6 +337,17 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
             )}
           </div>
         </div>
+      )}
+
+      {/* 3-2-1-GO! Mental Math Countdown Overlay */}
+      {isCountdownActive && (
+        <StartCountdown
+          title="بطولة الحساب الذهني التنافسية"
+          onComplete={() => {
+            setIsCountdownActive(false);
+            loadNextRoundQuestion(0);
+          }}
+        />
       )}
     </div>
   );
