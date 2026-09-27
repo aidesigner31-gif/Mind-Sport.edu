@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { GameMode, LEDTheme, SoundSettings } from '../types';
+import { GameMode, LEDTheme, SoundSettings, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
-import { Play, Users, Trophy, Volume2, ShieldCheck, Sparkles, Lock, LogOut, GraduationCap } from 'lucide-react';
+import { Play, Users, Trophy, Volume2, ShieldCheck, Sparkles, Lock, LogOut, GraduationCap, Shield, Zap } from 'lucide-react';
 import { AdminLoginModal } from './AdminLoginModal';
+import { LicenseModal } from './LicenseModal';
 import { UserRole } from '../utils/appAuth';
+import { getActiveSpeedInfo } from '../utils/adminSettings';
 
 interface MainMenuProps {
   userRole?: UserRole;
+  adminSettings?: AdminSettings;
   onSelectMode: (mode: GameMode) => void;
   selectedTheme: LEDTheme;
   onChangeTheme: (theme: LEDTheme) => void;
@@ -17,6 +20,7 @@ interface MainMenuProps {
 
 export const MainMenu: React.FC<MainMenuProps> = ({
   userRole = 'student',
+  adminSettings,
   onSelectMode,
   selectedTheme,
   onChangeTheme,
@@ -26,6 +30,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showLicense, setShowLicense] = useState(false);
+
+  const speedInfo = adminSettings ? getActiveSpeedInfo(adminSettings) : null;
 
   const handleAdminClick = () => {
     soundEngine.playTargetActivate();
@@ -118,9 +125,35 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         <h2 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-300 to-purple-400 mb-2 sm:mb-3 drop-shadow-[0_0_35px_rgba(236,72,153,0.4)]">
           SPEEDDIGITS
         </h2>
-        <p className="text-slate-300 text-xs sm:text-sm md:text-base max-w-2xl font-normal leading-relaxed mb-6 sm:mb-8 opacity-85">
+        <p className="text-slate-300 text-xs sm:text-sm md:text-base max-w-2xl font-normal leading-relaxed mb-4 opacity-85">
           Process mental arithmetic equations at high velocity and punch illuminated LED pads.
         </p>
+
+        {/* Unified Admin Speed Readout Banner */}
+        {speedInfo && (
+          <div className="mb-6 px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 backdrop-blur-md shadow-[0_0_25px_rgba(16,185,129,0.18)] flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs max-w-2xl w-full">
+            <div className="flex items-center gap-1.5 text-emerald-400 font-black">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span>السرعة الموحدة الحالية لجميع الأجهزة:</span>
+            </div>
+
+            <div className="flex items-center gap-2 font-mono font-black text-white bg-white/10 px-3 py-1 rounded-xl border border-white/15 shadow-inner">
+              <span>{speedInfo.icon} {speedInfo.displayNameAr}</span>
+              <span className="text-slate-400">•</span>
+              <span className="text-cyan-300">وميض: {speedInfo.effectiveFlashMs}ms ({(speedInfo.effectiveFlashMs / 1000).toFixed(2)}s)</span>
+              <span className="text-slate-400">•</span>
+              <span className="text-purple-300">إجابة: {speedInfo.timeLimitSec}s</span>
+            </div>
+
+            <div className="text-[10px] text-emerald-300/90 font-medium flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <span>مضبوطة مركزياً من الأدمن على كافة الأجهزة</span>
+            </div>
+          </div>
+        )}
 
         {/* Primary Menu Navigation Glass Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full">
@@ -188,6 +221,32 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </button>
         </div>
       </main>
+
+      {/* Footer with Copyright and License */}
+      <footer className="relative z-10 w-full max-w-7xl mt-8 pt-4 pb-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+        <div className="flex items-center gap-2 text-center sm:text-right">
+          <span>Copyright © 2026 <strong>شركة رياضة العقل</strong>. All rights reserved.</span>
+          <span className="hidden sm:inline opacity-40">•</span>
+          <span className="hidden sm:inline text-slate-400/80">صُممت وبرمجت لصالح شركة رياضة العقل</span>
+        </div>
+
+        <button
+          onClick={() => {
+            soundEngine.playTargetActivate();
+            setShowLicense(true);
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-pink-500/20 border border-white/10 hover:border-pink-500/30 text-pink-300 transition-all cursor-pointer font-medium text-xs"
+        >
+          <Shield className="w-3.5 h-3.5 text-pink-400" />
+          <span>ملف الترخيص والملكية الفكرية (License)</span>
+        </button>
+      </footer>
+
+      {/* License Modal */}
+      <LicenseModal
+        isOpen={showLicense}
+        onClose={() => setShowLicense(false)}
+      />
 
       {/* Admin Login Gate Modal */}
       <AdminLoginModal

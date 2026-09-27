@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameMode, LEDTheme, SoundSettings, AdminSettings } from './types';
 import { MainMenu } from './components/MainMenu';
 import { SinglePlayerGame } from './components/SinglePlayerGame';
@@ -8,7 +8,12 @@ import { TeacherDashboard } from './components/TeacherDashboard';
 import { DeviceShowcase } from './components/DeviceShowcase';
 import { AppLoginGate } from './components/AppLoginGate';
 import { isAppAuthenticated, setAppAuthenticated, getAppUserRole, UserRole } from './utils/appAuth';
-import { getStoredAdminSettings, saveStoredAdminSettings } from './utils/adminSettings';
+import {
+  getStoredAdminSettings,
+  saveStoredAdminSettings,
+  subscribeToRemoteAdminSettings,
+  syncAdminSettingsToServer,
+} from './utils/adminSettings';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isAppAuthenticated());
@@ -24,9 +29,20 @@ export default function App() {
 
   const [adminSettings, setAdminSettings] = useState<AdminSettings>(() => getStoredAdminSettings());
 
-  const handleUpdateAdminSettings = (newSettings: AdminSettings) => {
+  // Listen for real-time admin speed changes broadcast from server to all connected devices
+  useEffect(() => {
+    const unsubscribe = subscribeToRemoteAdminSettings((remoteSettings) => {
+      setAdminSettings(remoteSettings);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const handleUpdateAdminSettings = async (newSettings: AdminSettings) => {
     setAdminSettings(newSettings);
     saveStoredAdminSettings(newSettings);
+    await syncAdminSettingsToServer(newSettings);
   };
 
   const handleLoginSuccess = (role: UserRole) => {
@@ -78,6 +94,7 @@ export default function App() {
         {currentMode === 'main-menu' && (
           <MainMenu
             userRole={userRole}
+            adminSettings={adminSettings}
             onSelectMode={(mode) => setCurrentMode(mode)}
             selectedTheme={selectedTheme}
             onChangeTheme={(t) => setSelectedTheme(t)}

@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
@@ -11,6 +12,151 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+// Persistent centralized game settings across all devices
+interface GlobalAdminSettings {
+  gameSpeedMultiplier: number;
+  flashIntervalMs: number;
+  timeLimitSeconds: number;
+  targetLevel: number;
+  isComplexMode: boolean;
+  questionCount: number;
+  autoAdvanceDelayMs: number;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+const DEFAULT_GLOBAL_SETTINGS: GlobalAdminSettings = {
+  gameSpeedMultiplier: 1.0,
+  flashIntervalMs: 800,
+  timeLimitSeconds: 10,
+  targetLevel: 3,
+  isComplexMode: true,
+  questionCount: 10,
+  autoAdvanceDelayMs: 600,
+  updatedAt: new Date().toISOString(),
+  updatedBy: "Admin",
+};
+
+const SETTINGS_FILE_PATH = path.join(process.cwd(), "game-settings.json");
+
+function loadSettingsFromDisk(): GlobalAdminSettings {
+  try {
+    if (fs.existsSync(SETTINGS_FILE_PATH)) {
+      const content = fs.readFileSync(SETTINGS_FILE_PATH, "utf-8");
+      const parsed = JSON.parse(content);
+      return { ...DEFAULT_GLOBAL_SETTINGS, ...parsed };
+    }
+  } catch (err) {
+    console.error("Failed to read game settings from disk:", err);
+  }
+  return { ...DEFAULT_GLOBAL_SETTINGS };
+}
+
+let activeGlobalSettings: GlobalAdminSettings = loadSettingsFromDisk();
+
+function saveSettingsToDisk(settings: GlobalAdminSettings) {
+  try {
+    fs.writeFileSync(SETTINGS_FILE_PATH, JSON.stringify(settings, null, 2), "utf-8");
+  } catch (err) {
+    console.error("Failed to write game settings to disk:", err);
+  }
+}
+
+// Connected SSE clients for instantaneous multi-device speed sync
+const sseClients = new Set<express.Response>();
+
+function broadcastSettingsUpdate(settings: GlobalAdminSettings) {
+  const payload = JSON.stringify({ type: "SETTINGS_UPDATED", settings });
+  for (const client of sseClients) {
+    try {
+      client.write(`data: ${payload}\n\n`);
+    } catch {
+      sseClients.delete(client);
+    }
+  }
+}
+
+// Endpoint: Real-time SSE stream for game speed & settings
+app.get("/api/game-settings/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  if (typeof (res as any).flushHeaders === "function") {
+    (res as any).flushHeaders();
+  }
+
+  // Send current settings upon connect
+  res.write(`data: ${JSON.stringify({ type: "INITIAL_SETTINGS", settings: activeGlobalSettings })}\n\n`);
+  sseClients.add(res);
+
+  // Periodic heartbeat keepalive
+  const interval = setInterval(() => {
+    try {
+      res.write(": keepalive\n\n");
+    } catch {
+      clearInterval(interval);
+      sseClients.delete(res);
+    }
+  }, 20000);
+
+  req.on("close", () => {
+    clearInterval(interval);
+    sseClients.delete(res);
+  });
+});
+
+// Endpoint: Get current unified game settings
+app.get("/api/game-settings", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.json({
+    success: true,
+    settings: activeGlobalSettings,
+    updatedAt: activeGlobalSettings.updatedAt,
+  });
+});
+
+// Endpoint: Update unified game settings from Admin (applies instantly to all devices)
+app.post("/api/game-settings", (req, res) => {
+  try {
+    const incoming = req.body.settings || req.body;
+    if (!incoming || typeof incoming !== "object") {
+      return res.status(400).json({ success: false, error: "Invalid settings payload" });
+    }
+
+    const validated: GlobalAdminSettings = {
+      gameSpeedMultiplier: typeof incoming.gameSpeedMultiplier === "number" ? Math.max(0.1, Math.min(5, incoming.gameSpeedMultiplier)) : activeGlobalSettings.gameSpeedMultiplier,
+      flashIntervalMs: typeof incoming.flashIntervalMs === "number" ? Math.max(50, Math.min(5000, incoming.flashIntervalMs)) : activeGlobalSettings.flashIntervalMs,
+      timeLimitSeconds: typeof incoming.timeLimitSeconds === "number" ? Math.max(2, Math.min(120, incoming.timeLimitSeconds)) : activeGlobalSettings.timeLimitSeconds,
+      targetLevel: typeof incoming.targetLevel === "number" ? incoming.targetLevel : activeGlobalSettings.targetLevel,
+      isComplexMode: typeof incoming.isComplexMode === "boolean" ? incoming.isComplexMode : activeGlobalSettings.isComplexMode,
+      questionCount: typeof incoming.questionCount === "number" ? incoming.questionCount : activeGlobalSettings.questionCount,
+      autoAdvanceDelayMs: typeof incoming.autoAdvanceDelayMs === "number" ? incoming.autoAdvanceDelayMs : activeGlobalSettings.autoAdvanceDelayMs,
+      updatedAt: new Date().toISOString(),
+      updatedBy: req.body.adminUsername || "Admin",
+    };
+
+    activeGlobalSettings = validated;
+    saveSettingsToDisk(validated);
+    broadcastSettingsUpdate(validated);
+
+    console.log(`[Mind Sport] Admin updated game speed across all devices: ${validated.flashIntervalMs}ms flash, ${validated.timeLimitSeconds}s answer time, speed multiplier ${validated.gameSpeedMultiplier}x`);
+
+    res.json({
+      success: true,
+      settings: validated,
+      message: "تم تحديث وتوحيد السرعة على جميع الأجهزة بنجاح",
+    });
+  } catch (error: any) {
+    console.error("Error updating game settings:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to update settings" });
+  }
+});
+
+// Health check route
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", app: "Mind Sport" });
+});
 
 // Lazy GoogleGenAI initialization helper
 function getGenAI() {
@@ -27,11 +173,6 @@ function getGenAI() {
     },
   });
 }
-
-// Health check route
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", app: "Mind Sport" });
-});
 
 // Endpoint: AI Question Generator for Mind Sport Flash Card Drills
 app.post("/api/generate-ai-questions", async (req, res) => {

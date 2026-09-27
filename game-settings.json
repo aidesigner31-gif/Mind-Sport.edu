@@ -1,0 +1,11 @@
+{
+  "gameSpeedMultiplier": 1,
+  "flashIntervalMs": 800,
+  "timeLimitSeconds": 10,
+  "targetLevel": 3,
+  "isComplexMode": true,
+  "questionCount": 10,
+  "autoAdvanceDelayMs": 600,
+  "updatedAt": "2026-09-27T10:55:44.147Z",
+  "updatedBy": "Admin"
+}

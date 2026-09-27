@@ -4,7 +4,7 @@ import { soundEngine } from '../utils/audio';
 import { ArrowLeft, GraduationCap, Users, Plus, Download, Sparkles, ShieldCheck, FileText, Gauge, Zap, Play, Settings, CheckCircle2, RotateCcw, KeyRound, LogOut, Lock, Sliders, ChevronDown, ChevronUp, Check, Save, Home } from 'lucide-react';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { getAdminUsername } from '../utils/adminAuth';
-import { THREE_SPEED_PRESETS, SpeedPresetKey, getCurrentSpeedPresetKey, saveStoredAdminSettings } from '../utils/adminSettings';
+import { THREE_SPEED_PRESETS, SpeedPresetKey, getCurrentSpeedPresetKey, saveStoredAdminSettings, syncAdminSettingsToServer } from '../utils/adminSettings';
 
 interface TeacherDashboardProps {
   onBackToMenu: () => void;
@@ -21,6 +21,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [showAdvancedSliders, setShowAdvancedSliders] = useState<boolean>(false);
   const [stagedSettings, setStagedSettings] = useState<AdminSettings>(adminSettings);
   const [showAppliedToast, setShowAppliedToast] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   const currentAdminUser = getAdminUsername();
   const currentSpeedKey = getCurrentSpeedPresetKey(stagedSettings);
@@ -145,14 +146,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     });
   };
 
-  const handleAcceptAndApplySpeed = () => {
+  const handleAcceptAndApplySpeed = async () => {
     soundEngine.playVictorySound();
+    setIsSyncing(true);
     onUpdateAdminSettings(stagedSettings);
     saveStoredAdminSettings(stagedSettings);
+    await syncAdminSettingsToServer(stagedSettings);
+    setIsSyncing(false);
     setShowAppliedToast(true);
     setTimeout(() => {
       setShowAppliedToast(false);
-    }, 4500);
+    }, 6000);
   };
 
   const generateAIReport = async () => {
@@ -282,35 +286,40 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <div>
                 <div className="text-[10px] font-bold text-pink-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
                   <Zap className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
-                  ADMIN EXCLUSIVE SPEED CONTROL / تحكم المشرف الحصري في سرعة اللعبة
+                  ADMIN EXCLUSIVE SPEED CONTROL / تحكم المشرف الحصري وتوحيد السرعة على جميع الأجهزة
                 </div>
                 <h3 className="text-xl font-black text-white mt-0.5">
-                  حدد السرعة واضغط Accept لتطبيقها على اللعبة كاملة
+                  حدد السرعة واضغط اعتماد لتوحيدها فورياً على جميع الأجهزة
                 </h3>
               </div>
 
               {/* Active Speed Readout Badge */}
               <div className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 border border-emerald-400/50 text-emerald-200 font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.35)]">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>المدة المعتمدة حالياً:</span>
-                <span className="text-white text-sm font-black font-mono">
-                  {(adminSettings.flashIntervalMs / 1000).toFixed(2)}s ({adminSettings.flashIntervalMs}ms) • {adminSettings.timeLimitSeconds}s إجابة
-                </span>
+                <div className="flex flex-col text-right">
+                  <span className="text-[10px] text-emerald-400 font-bold">السرعة الموحدة حالياً على جميع الأجهزة:</span>
+                  <span className="text-white text-sm font-black font-mono">
+                    {(adminSettings.flashIntervalMs / 1000).toFixed(2)}s ({adminSettings.flashIntervalMs}ms) • {adminSettings.timeLimitSeconds}s إجابة
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Success Toast Notification after pressing Accept */}
             {showAppliedToast && (
               <div className="mb-5 p-4 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 text-emerald-200 flex items-center gap-3 animate-bounce shadow-[0_0_30px_rgba(16,185,129,0.5)]">
-                <div className="p-2 rounded-xl bg-emerald-500 text-slate-950 font-black">
+                <div className="p-2.5 rounded-xl bg-emerald-500 text-slate-950 font-black">
                   <Check className="w-5 h-5 stroke-[3]" />
                 </div>
                 <div className="text-right flex-1">
-                  <div className="text-sm font-black text-white">
-                    ✅ تم اعتماد وتطبيق السرعة والمدة بنجاح على اللعبة كاملة!
+                  <div className="text-sm font-black text-white flex items-center gap-2">
+                    <span>✅ تم توحيد السرعة واعتمادها على جميع الأجهزة بنجاح!</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-bold">
+                      تم المزامنة الحية
+                    </span>
                   </div>
-                  <div className="text-xs text-emerald-300">
-                    جميع اللاعبين في جميع الأنماط سيلعبون بمدة وميض: <span className="font-black text-white font-mono underline">{(stagedSettings.flashIntervalMs / 1000).toFixed(2)} ثانية ({stagedSettings.flashIntervalMs}ms)</span> ووقت إجابة: <span className="font-black text-white font-mono underline">{stagedSettings.timeLimitSeconds} ثانية</span>.
+                  <div className="text-xs text-emerald-300 mt-0.5 leading-relaxed">
+                    تم حفظ السرعة في السيرفر المركزي ومزامنتها فوراً مع كافة المتصفحات والأجهزة. عند فتح اللعبة من أي جهاز أو شاشة ذكية ستعمل بالسرعة المحددة: <span className="font-black text-white font-mono underline">{(stagedSettings.flashIntervalMs / 1000).toFixed(2)} ثانية ({stagedSettings.flashIntervalMs}ms)</span> ووقت إجابة: <span className="font-black text-white font-mono underline">{stagedSettings.timeLimitSeconds} ثانية</span>.
                   </div>
                 </div>
               </div>
@@ -628,14 +637,21 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             <div className="mb-5">
               <button
                 type="button"
+                disabled={isSyncing}
                 onClick={handleAcceptAndApplySpeed}
-                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-3 shadow-[0_0_35px_rgba(16,185,129,0.5)] transition-all transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-70 text-slate-950 font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-3 shadow-[0_0_35px_rgba(16,185,129,0.5)] transition-all transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
               >
                 <div className="w-7 h-7 rounded-full bg-slate-950 text-emerald-400 flex items-center justify-center font-black">
-                  <Check className="w-4 h-4 stroke-[3]" />
+                  {isSyncing ? (
+                    <RotateCcw className="w-4 h-4 animate-spin text-emerald-400" />
+                  ) : (
+                    <Check className="w-4 h-4 stroke-[3]" />
+                  )}
                 </div>
                 <span>
-                  اعتماد وتطبيق السرعة والمدة على اللعبة كاملة / ACCEPT & APPLY
+                  {isSyncing
+                    ? 'جاري التوحيد والمزامنة مع كافة الأجهزة...'
+                    : 'اعتماد وتوحيد السرعة على جميع الأجهزة / ACCEPT & UNIFY'}
                 </span>
                 <span className="text-xs px-3 py-1.5 rounded-xl bg-slate-950/70 text-emerald-300 font-mono font-bold border border-emerald-400/40">
                   وميض: {(stagedSettings.flashIntervalMs / 1000).toFixed(2)}s • إجابة: {stagedSettings.timeLimitSeconds}s

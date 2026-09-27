@@ -360,9 +360,9 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
               <div>
                 <div className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
                   <span>سرعة اللعبة: {speedInfo.displayNameAr}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 border border-pink-400/40 text-pink-300 font-bold flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" />
-                    معتمدة من الأدمن
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    موحدة لجميع الأجهزة
                   </span>
                 </div>
                 <div className="text-[10px] text-slate-300/80 font-mono mt-0.5">
@@ -371,11 +371,11 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
               </div>
             </div>
 
-            <div className="hidden sm:block text-left text-[10px] text-slate-400 font-mono">
-              <div className="text-slate-400">ADMIN CONTROLLED</div>
+            <div className="hidden sm:block text-left text-[10px] font-mono">
+              <div className="text-slate-400 font-medium">ADMIN UNIFIED</div>
               <div className="text-emerald-400 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                LOCKED
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                ALL DEVICES
               </div>
             </div>
           </div>

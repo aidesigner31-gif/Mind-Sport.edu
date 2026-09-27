@@ -217,19 +217,19 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
               <div>
                 <div className="text-xs font-black text-white flex items-center gap-1.5">
                   <span>سرعة البطولة المعتمدة: {speedInfo.displayNameAr}</span>
-                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold flex items-center gap-0.5">
-                    <Lock className="w-2.5 h-2.5" />
-                    محددة من المشرف
+                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    موحدة لجميع المتنافسين
                   </span>
                 </div>
                 <div className="text-[10px] text-slate-400 font-mono">
-                  معدل وميض الرقم: <span className="text-amber-300 font-bold">{speedInfo.effectiveFlashMs}ms</span>
+                  معدل وميض الرقم: <span className="text-amber-300 font-bold">{speedInfo.effectiveFlashMs}ms</span> • وقت الإجابة: <span className="text-purple-300 font-bold">{speedInfo.timeLimitSec}s</span>
                 </div>
               </div>
             </div>
-            <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" />
-              LOCKED
+            <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 font-mono">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              ALL DEVICES SYNCED
             </div>
           </div>
 

@@ -426,12 +426,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
 
       soundEngine.playVictorySound();
       
-      const totalQ = questions.length || 1;
-      const p1Acc = Math.round((p1Correct / totalQ) * 100);
-      const p2Acc = Math.round((p2Correct / totalQ) * 100);
-      if (p1Acc >= 70 || p2Acc >= 70) {
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-      }
+      confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 } });
     }
   };
 
@@ -524,9 +519,9 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
               <div>
                 <div className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
                   <span>سرعة اللعبة: {speedInfo.displayNameAr}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 font-bold flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" />
-                    معتمدة من الأدمن
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    موحدة لجميع الأجهزة
                   </span>
                 </div>
                 <div className="text-[10px] text-slate-300/80 font-mono mt-0.5">
@@ -535,11 +530,11 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
               </div>
             </div>
 
-            <div className="hidden sm:block text-left text-[10px] text-slate-400 font-mono">
-              <div className="text-slate-400">ADMIN CONTROLLED</div>
+            <div className="hidden sm:block text-left text-[10px] font-mono">
+              <div className="text-slate-400 font-medium">ADMIN UNIFIED</div>
               <div className="text-emerald-400 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                LOCKED
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                ALL DEVICES
               </div>
             </div>
           </div>

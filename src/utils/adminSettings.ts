@@ -93,6 +93,152 @@ export function saveStoredAdminSettings(settings: AdminSettings): void {
   }
 }
 
+/**
+ * Fetches the unified admin settings from the central server.
+ * This guarantees all devices get the exact speed set by the admin.
+ */
+export async function fetchRemoteAdminSettings(): Promise<AdminSettings | null> {
+  try {
+    const res = await fetch('/api/game-settings', {
+      method: 'GET',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.success && data.settings) {
+      const merged: AdminSettings = { ...DEFAULT_ADMIN_SETTINGS, ...data.settings };
+      saveStoredAdminSettings(merged);
+      return merged;
+    }
+  } catch (err) {
+    console.warn('Could not fetch remote admin settings, using local cache:', err);
+  }
+  return null;
+}
+
+/**
+ * Pushes updated settings from the Admin to the central server so that
+ * all players and devices receive the new speed and settings immediately.
+ */
+export async function syncAdminSettingsToServer(settings: AdminSettings): Promise<boolean> {
+  saveStoredAdminSettings(settings);
+  try {
+    const res = await fetch('/api/game-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return !!data.success;
+  } catch (err) {
+    console.error('Failed to sync settings to server:', err);
+    return false;
+  }
+}
+
+/**
+ * Subscribes to real-time speed & settings updates from the server.
+ * Uses Server-Sent Events (SSE) for instant cross-device updates,
+ * along with window focus revalidation and periodic fallback polling.
+ */
+export function subscribeToRemoteAdminSettings(
+  onUpdate: (settings: AdminSettings) => void
+): () => void {
+  let isCleanedUp = false;
+  let eventSource: EventSource | null = null;
+  let pollingInterval: NodeJS.Timeout | null = null;
+
+  const handleIncomingSettings = (raw: any) => {
+    if (!raw || typeof raw !== 'object') return;
+    const updated: AdminSettings = {
+      gameSpeedMultiplier: Number(raw.gameSpeedMultiplier) || 1.0,
+      flashIntervalMs: Number(raw.flashIntervalMs) || 800,
+      timeLimitSeconds: Number(raw.timeLimitSeconds) || 10,
+      targetLevel: typeof raw.targetLevel === 'number' ? raw.targetLevel : 3,
+      isComplexMode: Boolean(raw.isComplexMode),
+      questionCount: Number(raw.questionCount) || 10,
+      autoAdvanceDelayMs: Number(raw.autoAdvanceDelayMs) || 600,
+    };
+    saveStoredAdminSettings(updated);
+    onUpdate(updated);
+  };
+
+  // 1. Initial fetch
+  fetchRemoteAdminSettings().then((remote) => {
+    if (remote && !isCleanedUp) {
+      onUpdate(remote);
+    }
+  });
+
+  // 2. Setup Server-Sent Events (SSE) for instantaneous multi-device broadcast
+  try {
+    if (typeof window !== 'undefined' && 'EventSource' in window) {
+      eventSource = new EventSource('/api/game-settings/events');
+      
+      eventSource.onmessage = (event) => {
+        if (isCleanedUp) return;
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed && parsed.settings) {
+            handleIncomingSettings(parsed.settings);
+          }
+        } catch {
+          // heartbeat or unparseable
+        }
+      };
+
+      eventSource.onerror = () => {
+        // SSE reconnects automatically
+      };
+    }
+  } catch (e) {
+    console.warn('SSE subscription failed, falling back to polling:', e);
+  }
+
+  // 3. Fallback short polling (every 5 seconds) to ensure all devices stay in sync
+  pollingInterval = setInterval(async () => {
+    if (isCleanedUp) return;
+    const remote = await fetchRemoteAdminSettings();
+    if (remote && !isCleanedUp) {
+      onUpdate(remote);
+    }
+  }, 5000);
+
+  // 4. Revalidate whenever device tab gains focus or user switches back to browser
+  const handleFocus = async () => {
+    if (isCleanedUp) return;
+    const remote = await fetchRemoteAdminSettings();
+    if (remote && !isCleanedUp) {
+      onUpdate(remote);
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleFocus();
+      }
+    });
+  }
+
+  return () => {
+    isCleanedUp = true;
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('focus', handleFocus);
+    }
+  };
+}
+
 export function getCurrentSpeedPresetKey(settings: AdminSettings): SpeedPresetKey | 'custom' {
   if (settings.flashIntervalMs >= 1100 || settings.gameSpeedMultiplier <= 0.75) {
     return 'slow';
