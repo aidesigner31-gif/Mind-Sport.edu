@@ -5,7 +5,7 @@ import { MatchResultsModal } from './MatchResultsModal';
 import { StartCountdown } from './StartCountdown';
 import { Competitor, FlashCardToken, Question, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
-import { getLevel1Questions } from '../utils/questionsBank';
+import { getLevel1Questions, fetchQuestionsForLevel } from '../utils/questionsBank';
 import { ArrowLeft, Trophy, Medal, Flame, Timer, CheckCircle, AlertTriangle, Play, Lock, CheckCircle2 } from 'lucide-react';
 import { getActiveSpeedInfo, DEFAULT_ADMIN_SETTINGS } from '../utils/adminSettings';
 
@@ -60,9 +60,9 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   };
 
   const loadNextRoundQuestion = (roundIdx: number) => {
-    if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
-
-    const qList = getLevel1Questions(1);
+    const lvl = typeof activeAdminSettings.targetLevel === 'number' ? activeAdminSettings.targetLevel : 1;
+    const isComp = activeAdminSettings.isComplexMode ?? false;
+    const qList = fetchQuestionsForLevel(lvl, isComp, 1);
     const q: Question = qList[0] || {
       id: `champ_${roundIdx}`,
       displayTitle: `CHAMPIONSHIP ROUND ${roundIdx + 1}`,

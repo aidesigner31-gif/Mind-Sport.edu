@@ -4,7 +4,7 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import { fetchQuestionsForLevel, convertPromptSeqToTerms } from "./src/utils/questionsBank";
+import { fetchQuestionsForLevel, convertPromptSeqToTerms, TALMAS_LEVEL_0_BANK } from "./src/utils/questionsBank";
 
 dotenv.config();
 
@@ -174,13 +174,29 @@ function getGenAI() {
   });
 }
 
+// Endpoint: Get Level 0 Excel Question Bank (20 drills)
+app.get("/api/level-0-questions", (_req, res) => {
+  res.json({
+    success: true,
+    total: TALMAS_LEVEL_0_BANK.length,
+    questions: TALMAS_LEVEL_0_BANK,
+  });
+});
+
 // Endpoint: AI Question Generator for Mind Sport Flash Card Drills
 app.post("/api/generate-ai-questions", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   try {
     const { level = 1, isComplex = false, count = 5, operations = ["+", "-"], theme = "Olympic Arena" } = req.body;
 
-    // For Level 1 / Level 0, serve directly from the 20-question TALMAS official bank (5 random questions per round)
-    if (level <= 1) {
+    // For Level 0, serve directly from the 20-question Level 0 competition bank (5 random distinct questions with anti-repetition memory on replay)
+    if (level === 0) {
+      const questions = fetchQuestionsForLevel(0, isComplex, count);
+      return res.json({ success: true, source: "talmas_level_0_bank", questions });
+    }
+
+    // For Level 1, serve directly from the 20-question TALMAS official bank (5 random questions per round)
+    if (level === 1) {
       const questions = fetchQuestionsForLevel(1, isComplex, count);
       return res.json({ success: true, source: "talmas_bank", questions });
     }

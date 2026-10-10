@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { StudentRecord, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
-import { ArrowLeft, GraduationCap, Users, Plus, Download, Sparkles, ShieldCheck, FileText, Gauge, Zap, Play, Settings, CheckCircle2, RotateCcw, KeyRound, LogOut, Lock, Sliders, ChevronDown, ChevronUp, Check, Save, Home } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Users, Plus, Download, Sparkles, ShieldCheck, FileText, Gauge, Zap, Play, Settings, CheckCircle2, RotateCcw, KeyRound, LogOut, Lock, Sliders, ChevronDown, ChevronUp, Check, Save, Home, Table, Eye, BookOpen } from 'lucide-react';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { getAdminUsername } from '../utils/adminAuth';
 import { THREE_SPEED_PRESETS, SpeedPresetKey, getCurrentSpeedPresetKey, saveStoredAdminSettings, syncAdminSettingsToServer } from '../utils/adminSettings';
+import { TALMAS_LEVEL_0_BANK } from '../utils/questionsBank';
 
 interface TeacherDashboardProps {
   onBackToMenu: () => void;
@@ -129,6 +130,35 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       } else {
         setSimActiveDigit(null);
         setIsSimulating(false);
+        clearInterval(simInterval);
+        soundEngine.playCorrectSound();
+      }
+    }, intervalMs);
+  };
+
+  const [selectedTableTab, setSelectedTableTab] = useState<'all' | 'table1' | 'table2'>('all');
+  const [previewingDrillIdx, setPreviewingDrillIdx] = useState<number | null>(null);
+
+  const previewLevel0Drill = (drillIdx: number, promptSeq: { type: string; value: string }[]) => {
+    if (isSimulating) return;
+    setIsSimulating(true);
+    setPreviewingDrillIdx(drillIdx);
+    setSimActiveDigit(null);
+
+    let idx = 0;
+    const intervalMs = Math.max(80, Math.round(stagedSettings.flashIntervalMs / stagedSettings.gameSpeedMultiplier));
+
+    const simInterval = setInterval(() => {
+      if (idx < promptSeq.length) {
+        const val = promptSeq[idx].value.replace('-', '');
+        const num = parseInt(val, 10);
+        setSimActiveDigit(!isNaN(num) ? num : 0);
+        soundEngine.playTargetActivate();
+        idx++;
+      } else {
+        setSimActiveDigit(null);
+        setIsSimulating(false);
+        setPreviewingDrillIdx(null);
         clearInterval(simInterval);
         soundEngine.playCorrectSound();
       }
@@ -762,6 +792,150 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   ))}
                 </select>
               </div>
+            </div>
+          </div>
+
+          {/* Level 0 Excel Question Bank Card */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300">
+                  <Table className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    بنك أسئلة المستوى 0 (جدول الإكسيل)
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      20 مسألة معتمدة
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    مبني طبقاً لطريقة الفيديو: كل صف يمثل مسألة تومض أرقامها (B إلى F)، والعمود G هو الناتج الصحيح.
+                  </p>
+                </div>
+              </div>
+
+              {/* Table Switcher Tabs */}
+              <div className="flex items-center bg-[#0a0f1d] border border-white/10 rounded-xl p-1 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTableTab('all')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    selectedTableTab === 'all'
+                      ? 'bg-emerald-500 text-slate-950 font-black shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  الكل (20)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTableTab('table1')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    selectedTableTab === 'table1'
+                      ? 'bg-emerald-500 text-slate-950 font-black shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  جدول 1 (1-10)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTableTab('table2')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    selectedTableTab === 'table2'
+                      ? 'bg-emerald-500 text-slate-950 font-black shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  جدول 2 (11-20)
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Excel Table View */}
+            <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#070b14]/90 max-h-80 overflow-y-auto">
+              <table className="w-full text-center border-collapse">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10 text-[10px] font-mono text-slate-400 uppercase tracking-wider sticky top-0 backdrop-blur-md">
+                    <th className="py-2.5 px-3 text-right">المسألة / الصف</th>
+                    <th className="py-2.5 px-2 text-cyan-400">عمود B</th>
+                    <th className="py-2.5 px-2 text-cyan-400">عمود C</th>
+                    <th className="py-2.5 px-2 text-cyan-400">عمود D</th>
+                    <th className="py-2.5 px-2 text-cyan-400">عمود E</th>
+                    <th className="py-2.5 px-2 text-cyan-400">عمود F</th>
+                    <th className="py-2.5 px-3 text-amber-400 font-bold bg-amber-500/10">الناتج (عمود G)</th>
+                    <th className="py-2.5 px-3 text-slate-300">معاينة الوميض</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-xs font-mono">
+                  {TALMAS_LEVEL_0_BANK.filter((_, idx) => {
+                    if (selectedTableTab === 'table1') return idx < 10;
+                    if (selectedTableTab === 'table2') return idx >= 10;
+                    return true;
+                  }).map((drill, filteredIdx) => {
+                    const actualIdx = selectedTableTab === 'table2' ? filteredIdx + 10 : filteredIdx;
+                    const tokens = drill.promptSeq || [];
+                    const isPreviewingThis = previewingDrillIdx === actualIdx;
+
+                    return (
+                      <tr
+                        key={actualIdx}
+                        className={`hover:bg-white/5 transition-colors ${
+                          isPreviewingThis ? 'bg-emerald-500/15' : ''
+                        }`}
+                      >
+                        <td className="py-2 px-3 text-right font-bold text-slate-300 whitespace-nowrap">
+                          <span className="text-[10px] text-slate-500 ml-1">#{String(actualIdx + 1).padStart(2, '0')}</span>
+                          <span>تدريب {actualIdx + 1}</span>
+                        </td>
+                        {tokens.map((tok, tIdx) => {
+                          const isNeg = tok.value.startsWith('-');
+                          return (
+                            <td
+                              key={tIdx}
+                              className={`py-2 px-2 font-bold ${
+                                isNeg ? 'text-rose-400' : 'text-slate-200'
+                              }`}
+                            >
+                              {tok.value}
+                            </td>
+                          );
+                        })}
+                        <td className="py-2 px-3 font-black text-amber-300 bg-amber-500/5 text-sm">
+                          {drill.answer}
+                        </td>
+                        <td className="py-2 px-3">
+                          <button
+                            type="button"
+                            onClick={() => previewLevel0Drill(actualIdx, tokens)}
+                            disabled={isSimulating}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 mx-auto transition-all ${
+                              isPreviewingThis
+                                ? 'bg-emerald-400 text-slate-950 font-black scale-105 shadow-[0_0_12px_rgba(52,211,153,0.5)] animate-pulse'
+                                : 'bg-white/5 hover:bg-white/10 text-cyan-300 border border-white/10'
+                            }`}
+                            title="تشغيل تجربة الوميض على لوحة الأرقام أعلاه"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
+                            {isPreviewingThis ? 'يومض الآن...' : 'تجربة'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                المستوى 0 مفعّل ومربوط ببنك الأسئلة في الفردي والثنائي والبطولة
+              </span>
+              <span className="text-slate-500 text-[10px]">
+                سرعة الوميض الحالية: {stagedCalculatedFlashDuration}ms لكل رقم
+              </span>
             </div>
           </div>
         </div>

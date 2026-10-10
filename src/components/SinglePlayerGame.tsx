@@ -76,13 +76,17 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
     try {
       const res = await fetch('/api/generate-ai-questions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store',
+        },
         body: JSON.stringify({
           level: lvl,
           isComplex: complex,
           count: 5,
           operations: complex ? ['+', '-', '*'] : ['+', '-'],
           theme: 'Mind Sport Single Player',
+          timestamp: Date.now(),
         }),
       });
       const data = await res.json();
@@ -399,7 +403,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
                 >
                   <span className="text-xs font-black text-cyan-400">Level {l}</span>
                   <span className="text-[10px] font-bold opacity-80">
-                    {l === 0 ? 'Starter' : `Lvl ${l}`}
+                    {l === 0 ? 'Starter (تمهيدي)' : `Lvl ${l}`}
                   </span>
                 </button>
               ))}
@@ -441,6 +445,11 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
               <div className="text-lg sm:text-2xl font-black text-white">
                 {currentQIndex + 1} <span className="text-xs sm:text-sm text-slate-500">/ {questions.length}</span>
               </div>
+              {questions[currentQIndex]?.displayTitle && (
+                <div className="text-[10px] font-bold text-cyan-300 mt-1 truncate bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-lg">
+                  {questions[currentQIndex].displayTitle}
+                </div>
+              )}
             </div>
 
             <div className="w-full text-center lg:text-left">
@@ -483,6 +492,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
               onSubmitAnswer={handleSubmitAnswer}
               flashStatus={flashStatus}
               interactive={!isShowingSequence}
+              labelTitle={questions[currentQIndex]?.displayTitle || 'Mind Sport'}
             />
           </div>
         </div>

@@ -104,13 +104,17 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
     try {
       const res = await fetch('/api/generate-ai-questions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store',
+        },
         body: JSON.stringify({
           level: lvl,
           isComplex: complex,
           count: 5,
           operations: complex ? ['+', '-', '*'] : ['+', '-'],
           theme: 'Mind Sport Two Player Head-To-Head',
+          timestamp: Date.now(),
         }),
       });
       const data = await res.json();
@@ -558,7 +562,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
                 >
                   <span className="text-xs font-black text-purple-300">Level {l}</span>
                   <span className="text-[10px] font-bold opacity-80">
-                    {l === 0 ? 'Starter' : `Lvl ${l}`}
+                    {l === 0 ? 'Starter (تمهيدي)' : `Lvl ${l}`}
                   </span>
                 </button>
               ))}
@@ -606,6 +610,11 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
             <div className="flex items-center gap-2 text-cyan-400">
               <span className="text-[10px] uppercase text-slate-400">الجولة / ROUND:</span>
               <span className="text-sm font-mono text-white">{currentQIndex + 1} / {questions.length}</span>
+              {questions[currentQIndex]?.displayTitle && (
+                <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-lg hidden sm:inline-block">
+                  {questions[currentQIndex].displayTitle}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2 text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-xl">
@@ -656,7 +665,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
                   onToggleMinus={handleP1ToggleMinus}
                   onClear={handleP1Clear}
                   onSubmitAnswer={handleP1Submit}
-                  labelTitle="P1 MACHINE"
+                  labelTitle={questions[currentQIndex]?.displayTitle || "P1 MACHINE"}
                   interactive={!isShowingSeq && !p1Submitted}
                   isSubmitted={p1Submitted}
                 />
@@ -699,7 +708,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
                   onToggleMinus={handleP2ToggleMinus}
                   onClear={handleP2Clear}
                   onSubmitAnswer={handleP2Submit}
-                  labelTitle="P2 MACHINE"
+                  labelTitle={questions[currentQIndex]?.displayTitle || "P2 MACHINE"}
                   interactive={!isShowingSeq && !p2Submitted}
                   isSubmitted={p2Submitted}
                 />
