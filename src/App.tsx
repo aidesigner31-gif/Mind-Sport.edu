@@ -11,6 +11,7 @@ import { isAppAuthenticated, setAppAuthenticated, getAppUserRole, UserRole } fro
 import {
   getStoredAdminSettings,
   saveStoredAdminSettings,
+  fetchRemoteAdminSettings,
   subscribeToRemoteAdminSettings,
   syncAdminSettingsToServer,
 } from './utils/adminSettings';
@@ -38,6 +39,15 @@ export default function App() {
       unsubscribe();
     };
   }, []);
+
+  // Guarantee every device fetches latest speed when opened or when switching to any game/screen
+  useEffect(() => {
+    fetchRemoteAdminSettings().then((remote) => {
+      if (remote) {
+        setAdminSettings(remote);
+      }
+    });
+  }, [currentMode]);
 
   const handleUpdateAdminSettings = async (newSettings: AdminSettings) => {
     setAdminSettings(newSettings);

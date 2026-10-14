@@ -4,7 +4,14 @@ import { soundEngine } from '../utils/audio';
 import { ArrowLeft, GraduationCap, Users, Plus, Download, Sparkles, ShieldCheck, FileText, Gauge, Zap, Play, Settings, CheckCircle2, RotateCcw, KeyRound, LogOut, Lock, Sliders, ChevronDown, ChevronUp, Check, Save, Home, Table, Eye, BookOpen } from 'lucide-react';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { getAdminUsername } from '../utils/adminAuth';
-import { THREE_SPEED_PRESETS, SpeedPresetKey, getCurrentSpeedPresetKey, saveStoredAdminSettings, syncAdminSettingsToServer } from '../utils/adminSettings';
+import {
+  THREE_SPEED_PRESETS,
+  SpeedPresetKey,
+  getCurrentSpeedPresetKey,
+  saveStoredAdminSettings,
+  syncAdminSettingsToServer,
+  fetchRemoteAdminSettings,
+} from '../utils/adminSettings';
 import { TALMAS_LEVEL_0_BANK } from '../utils/questionsBank';
 
 interface TeacherDashboardProps {
@@ -29,6 +36,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const activeSpeedKey = getCurrentSpeedPresetKey(adminSettings);
   const activeCalculatedFlashDuration = Math.max(80, Math.round(adminSettings.flashIntervalMs / adminSettings.gameSpeedMultiplier));
   const stagedCalculatedFlashDuration = Math.max(80, Math.round(stagedSettings.flashIntervalMs / stagedSettings.gameSpeedMultiplier));
+
+  // When opening TeacherDashboard, immediately fetch authoritative speed from the central server
+  useEffect(() => {
+    fetchRemoteAdminSettings().then((remote) => {
+      if (remote) {
+        setStagedSettings(remote);
+        onUpdateAdminSettings(remote);
+      }
+    });
+  }, []);
 
   // Sync stagedSettings if parent adminSettings updates externally
   useEffect(() => {
@@ -165,28 +182,38 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     }, intervalMs);
   };
 
-  const applySpeedPreset = (key: SpeedPresetKey) => {
-    soundEngine.playTargetActivate();
-    const preset = THREE_SPEED_PRESETS[key];
-    setStagedSettings({
-      ...stagedSettings,
-      gameSpeedMultiplier: preset.multiplier,
-      flashIntervalMs: preset.flashIntervalMs,
-      timeLimitSeconds: preset.timeLimitSeconds,
-    });
-  };
-
-  const handleAcceptAndApplySpeed = async () => {
-    soundEngine.playVictorySound();
+  // Instantly broadcast and unify speed across all devices
+  const syncAndApplySettings = async (newSettings: AdminSettings, isVictory = false) => {
+    if (isVictory) {
+      soundEngine.playVictorySound();
+    } else {
+      soundEngine.playTargetActivate();
+    }
+    setStagedSettings(newSettings);
+    onUpdateAdminSettings(newSettings);
+    saveStoredAdminSettings(newSettings);
     setIsSyncing(true);
-    onUpdateAdminSettings(stagedSettings);
-    saveStoredAdminSettings(stagedSettings);
-    await syncAdminSettingsToServer(stagedSettings);
+    await syncAdminSettingsToServer(newSettings);
     setIsSyncing(false);
     setShowAppliedToast(true);
     setTimeout(() => {
       setShowAppliedToast(false);
-    }, 6000);
+    }, 4500);
+  };
+
+  const applySpeedPreset = (key: SpeedPresetKey) => {
+    const preset = THREE_SPEED_PRESETS[key];
+    const updated: AdminSettings = {
+      ...stagedSettings,
+      gameSpeedMultiplier: preset.multiplier,
+      flashIntervalMs: preset.flashIntervalMs,
+      timeLimitSeconds: preset.timeLimitSeconds,
+    };
+    syncAndApplySettings(updated, true);
+  };
+
+  const handleAcceptAndApplySpeed = async () => {
+    await syncAndApplySettings(stagedSettings, true);
   };
 
   const generateAIReport = async () => {
@@ -316,18 +343,24 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <div>
                 <div className="text-[10px] font-bold text-pink-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
                   <Zap className="w-3.5 h-3.5 text-pink-400 fill-pink-400" />
-                  ADMIN EXCLUSIVE SPEED CONTROL / تحكم المشرف الحصري وتوحيد السرعة على جميع الأجهزة
+                  ADMIN EXCLUSIVE SPEED CONTROL / توحيد السرعة المركزية لجميع الأجهزة
                 </div>
                 <h3 className="text-xl font-black text-white mt-0.5">
-                  حدد السرعة واضغط اعتماد لتوحيدها فورياً على جميع الأجهزة
+                  التحكم بالسرعة وتوحيدها آلياً على كافة الشاشات والأجهزة
                 </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  عند تغيير أي إعداد أو فتح لوحة التحكم، يتم مزامنة وتوحيد السرعة فورياً عبر السيرفر المركزي لتعمل كافة الأجهزة بنفس التوقيت.
+                </p>
               </div>
 
               {/* Active Speed Readout Badge */}
-              <div className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-teal-950/80 border border-emerald-400/50 text-emerald-200 font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.35)]">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-950/90 to-teal-950/90 border border-emerald-400/50 text-emerald-200 font-black text-xs flex items-center gap-2.5 shadow-[0_0_20px_rgba(16,185,129,0.35)]">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
                 <div className="flex flex-col text-right">
-                  <span className="text-[10px] text-emerald-400 font-bold">السرعة الموحدة حالياً على جميع الأجهزة:</span>
+                  <span className="text-[10px] text-emerald-400 font-bold">السرعة الموحدة الحالية على جميع الأجهزة:</span>
                   <span className="text-white text-sm font-black font-mono">
                     {(adminSettings.flashIntervalMs / 1000).toFixed(2)}s ({adminSettings.flashIntervalMs}ms) • {adminSettings.timeLimitSeconds}s إجابة
                   </span>
@@ -335,7 +368,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </div>
             </div>
 
-            {/* Success Toast Notification after pressing Accept */}
+            {/* Success Toast Notification after pressing Accept or changing speed */}
             {showAppliedToast && (
               <div className="mb-5 p-4 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 text-emerald-200 flex items-center gap-3 animate-bounce shadow-[0_0_30px_rgba(16,185,129,0.5)]">
                 <div className="p-2.5 rounded-xl bg-emerald-500 text-slate-950 font-black">
@@ -343,17 +376,69 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 </div>
                 <div className="text-right flex-1">
                   <div className="text-sm font-black text-white flex items-center gap-2">
-                    <span>✅ تم توحيد السرعة واعتمادها على جميع الأجهزة بنجاح!</span>
+                    <span>✅ تم توحيد السرعة وتطبيقها على جميع الأجهزة بنجاح!</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-bold">
-                      تم المزامنة الحية
+                      مزامنة فورية حية
                     </span>
                   </div>
                   <div className="text-xs text-emerald-300 mt-0.5 leading-relaxed">
-                    تم حفظ السرعة في السيرفر المركزي ومزامنتها فوراً مع كافة المتصفحات والأجهزة. عند فتح اللعبة من أي جهاز أو شاشة ذكية ستعمل بالسرعة المحددة: <span className="font-black text-white font-mono underline">{(stagedSettings.flashIntervalMs / 1000).toFixed(2)} ثانية ({stagedSettings.flashIntervalMs}ms)</span> ووقت إجابة: <span className="font-black text-white font-mono underline">{stagedSettings.timeLimitSeconds} ثانية</span>.
+                    تم حفظ السرعة في السيرفر المركزي وبثها فوراً لكافة المتصفحات والأجهزة المتصلة: <span className="font-black text-white font-mono underline">{(stagedSettings.flashIntervalMs / 1000).toFixed(2)} ثانية ({stagedSettings.flashIntervalMs}ms)</span> ووقت إجابة: <span className="font-black text-white font-mono underline">{stagedSettings.timeLimitSeconds} ثانية</span>.
                   </div>
                 </div>
               </div>
             )}
+
+            {/* ⭐ 3 UNIFIED SPEED PRESET CARDS (بطيء / عادي / سريع) ⭐ */}
+            <div className="mb-5">
+              <div className="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-cyan-300">
+                  <Sparkles className="w-4 h-4 text-cyan-400" />
+                  الأنماط الثلاثة المعتمدة للسرعة (اضغط لاختيار وتوحيد السرعة فوراً):
+                </span>
+                <span className="text-[10px] font-mono text-slate-400">نقرة واحدة توحد السرعة في كامل المنظومة</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(['slow', 'normal', 'fast'] as SpeedPresetKey[]).map((key) => {
+                  const p = THREE_SPEED_PRESETS[key];
+                  const isSelected =
+                    stagedSettings.flashIntervalMs === p.flashIntervalMs &&
+                    stagedSettings.timeLimitSeconds === p.timeLimitSeconds;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => applySpeedPreset(key)}
+                      className={`relative p-4 rounded-2xl border text-right transition-all flex flex-col justify-between cursor-pointer group active:scale-95 ${
+                        isSelected
+                          ? `bg-slate-900/90 border-2 ${p.borderColor} shadow-[0_0_30px_rgba(236,72,153,0.35)] scale-[1.02]`
+                          : 'bg-slate-950/70 border-white/10 hover:border-white/30 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-3xl drop-shadow-md">{p.icon}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${p.badgeColor}`}>
+                          {isSelected ? '✓ المعتمد حالياً' : p.nameEn}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-base font-black text-white group-hover:text-cyan-200 transition-colors">
+                          {p.nameAr}
+                        </div>
+                        <div className="text-xs text-cyan-300 font-mono mt-1 font-bold">
+                          وميض: {(p.flashIntervalMs / 1000).toFixed(1)}s ({p.flashIntervalMs}ms)
+                        </div>
+                        <div className="text-[11px] text-purple-300 font-mono mt-0.5">
+                          وقت إجابة: {p.timeLimitSeconds} ثوانٍ
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-1 line-clamp-1">
+                          {p.taglineAr}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* ⏱️ SPEED & DURATION COUNTER CONTROLLERS ⏱️ */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
@@ -381,11 +466,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          soundEngine.playTargetActivate();
-                          setStagedSettings((prev) => ({
-                            ...prev,
-                            flashIntervalMs: Math.max(100, prev.flashIntervalMs - 100),
-                          }));
+                          const updated = {
+                            ...stagedSettings,
+                            flashIntervalMs: Math.max(100, stagedSettings.flashIntervalMs - 100),
+                          };
+                          syncAndApplySettings(updated);
                         }}
                         className="w-10 h-10 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white border border-cyan-500/40 flex items-center justify-center font-black text-lg transition-all active:scale-95 cursor-pointer"
                         title="إنقاص 0.1 ثانية (-100ms)"
@@ -395,11 +480,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          soundEngine.playTargetActivate();
-                          setStagedSettings((prev) => ({
-                            ...prev,
-                            flashIntervalMs: Math.max(100, prev.flashIntervalMs - 50),
-                          }));
+                          const updated = {
+                            ...stagedSettings,
+                            flashIntervalMs: Math.max(100, stagedSettings.flashIntervalMs - 50),
+                          };
+                          syncAndApplySettings(updated);
                         }}
                         className="px-2 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-cyan-200 border border-white/10 flex items-center justify-center font-bold text-[10px] transition-all active:scale-95 cursor-pointer font-mono"
                         title="إنقاص 0.05 ثانية (-50ms)"
@@ -424,11 +509,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          soundEngine.playTargetActivate();
-                          setStagedSettings((prev) => ({
-                            ...prev,
-                            flashIntervalMs: Math.min(3000, prev.flashIntervalMs + 50),
-                          }));
+                          const updated = {
+                            ...stagedSettings,
+                            flashIntervalMs: Math.min(3000, stagedSettings.flashIntervalMs + 50),
+                          };
+                          syncAndApplySettings(updated);
                         }}
                         className="px-2 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-cyan-200 border border-white/10 flex items-center justify-center font-bold text-[10px] transition-all active:scale-95 cursor-pointer font-mono"
                         title="زيادة 0.05 ثانية (+50ms)"
@@ -438,11 +523,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          soundEngine.playTargetActivate();
-                          setStagedSettings((prev) => ({
-                            ...prev,
-                            flashIntervalMs: Math.min(3000, prev.flashIntervalMs + 100),
-                          }));
+                          const updated = {
+                            ...stagedSettings,
+                            flashIntervalMs: Math.min(3000, stagedSettings.flashIntervalMs + 100),
+                          };
+                          syncAndApplySettings(updated);
                         }}
                         className="w-10 h-10 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white border border-cyan-500/40 flex items-center justify-center font-black text-lg transition-all active:scale-95 cursor-pointer"
                         title="زيادة 0.1 ثانية (+100ms)"
@@ -471,6 +556,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           flashIntervalMs: parseInt(e.target.value, 10),
                         })
                       }
+                      onPointerUp={() => syncAndApplySettings(stagedSettings)}
                       className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
                     />
                   </div>
@@ -492,11 +578,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       key={chip.val}
                       type="button"
                       onClick={() => {
-                        soundEngine.playTargetActivate();
-                        setStagedSettings({
+                        const updated = {
                           ...stagedSettings,
                           flashIntervalMs: chip.val,
-                        });
+                        };
+                        syncAndApplySettings(updated);
                       }}
                       className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border ${
                         stagedSettings.flashIntervalMs === chip.val
@@ -533,11 +619,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          soundEngine.playTargetActivate();
-                          setStagedSettings((prev) => ({
-                            ...prev,
-                            timeLimitSeconds: Math.max(3, prev.timeLimitSeconds - 5),
-                          }));
+                          const updated = {
+                            ...stagedSettings,
+                            timeLimitSeconds: Math.max(3, stagedSettings.timeLimitSeconds - 5),
+                          };
+                          syncAndApplySettings(updated);
                         }}
                         className="px-2 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-purple-200 border border-white/10 flex items-center justify-center font-bold text-[10px] transition-all active:scale-95 cursor-pointer font-mono"
                         title="إنقاص 5 ثوانٍ"
@@ -547,11 +633,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          soundEngine.playTargetActivate();
-                          setStagedSettings((prev) => ({
-                            ...prev,
-                            timeLimitSeconds: Math.max(2, prev.timeLimitSeconds - 1),
-                          }));
+                          const updated = {
+                            ...stagedSettings,
+                            timeLimitSeconds: Math.max(2, stagedSettings.timeLimitSeconds - 1),
+                          };
+                          syncAndApplySettings(updated);
                         }}
                         className="w-10 h-10 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 flex items-center justify-center font-black text-lg transition-all active:scale-95 cursor-pointer"
                         title="إنقاص ثانية واحدة (-1s)"
@@ -576,11 +662,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          soundEngine.playTargetActivate();
-                          setStagedSettings((prev) => ({
-                            ...prev,
-                            timeLimitSeconds: Math.min(60, prev.timeLimitSeconds + 1),
-                          }));
+                          const updated = {
+                            ...stagedSettings,
+                            timeLimitSeconds: Math.min(60, stagedSettings.timeLimitSeconds + 1),
+                          };
+                          syncAndApplySettings(updated);
                         }}
                         className="w-10 h-10 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/40 flex items-center justify-center font-black text-lg transition-all active:scale-95 cursor-pointer"
                         title="زيادة ثانية واحدة (+1s)"
@@ -590,11 +676,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          soundEngine.playTargetActivate();
-                          setStagedSettings((prev) => ({
-                            ...prev,
-                            timeLimitSeconds: Math.min(60, prev.timeLimitSeconds + 5),
-                          }));
+                          const updated = {
+                            ...stagedSettings,
+                            timeLimitSeconds: Math.min(60, stagedSettings.timeLimitSeconds + 5),
+                          };
+                          syncAndApplySettings(updated);
                         }}
                         className="px-2 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-purple-200 border border-white/10 flex items-center justify-center font-bold text-[10px] transition-all active:scale-95 cursor-pointer font-mono"
                         title="زيادة 5 ثوانٍ"
@@ -623,6 +709,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           timeLimitSeconds: parseInt(e.target.value, 10),
                         })
                       }
+                      onPointerUp={() => syncAndApplySettings(stagedSettings)}
                       className="w-full accent-purple-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
                     />
                   </div>
@@ -644,11 +731,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       key={chip.val}
                       type="button"
                       onClick={() => {
-                        soundEngine.playTargetActivate();
-                        setStagedSettings({
+                        const updated = {
                           ...stagedSettings,
                           timeLimitSeconds: chip.val,
-                        });
+                        };
+                        syncAndApplySettings(updated);
                       }}
                       className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-all border ${
                         stagedSettings.timeLimitSeconds === chip.val
@@ -681,7 +768,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <span>
                   {isSyncing
                     ? 'جاري التوحيد والمزامنة مع كافة الأجهزة...'
-                    : 'اعتماد وتوحيد السرعة على جميع الأجهزة / ACCEPT & UNIFY'}
+                    : 'اعتماد وتوحيد السرعة فورياً على جميع الأجهزة / ACCEPT & UNIFY'}
                 </span>
                 <span className="text-xs px-3 py-1.5 rounded-xl bg-slate-950/70 text-emerald-300 font-mono font-bold border border-emerald-400/40">
                   وميض: {(stagedSettings.flashIntervalMs / 1000).toFixed(2)}s • إجابة: {stagedSettings.timeLimitSeconds}s

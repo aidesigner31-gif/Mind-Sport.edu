@@ -25,7 +25,7 @@ export const THREE_SPEED_PRESETS: Record<SpeedPresetKey, SpeedPreset> = {
     taglineAr: 'وميض هادئ ومريح للتدريب وبناء التركيز',
     taglineEn: '1.2s per flash • 15s per question',
     icon: '🐢',
-    multiplier: 0.7,
+    multiplier: 1.0,
     flashIntervalMs: 1200,
     timeLimitSeconds: 15,
     badgeColor: 'text-emerald-300 bg-emerald-950/80 border-emerald-500/40',
@@ -53,7 +53,7 @@ export const THREE_SPEED_PRESETS: Record<SpeedPresetKey, SpeedPreset> = {
     taglineAr: 'وميض خاطف وتحدي رد فعل فائق للأبطال',
     taglineEn: '0.4s per flash • 6s per question',
     icon: '🚀',
-    multiplier: 1.5,
+    multiplier: 1.0,
     flashIntervalMs: 400,
     timeLimitSeconds: 6,
     badgeColor: 'text-pink-300 bg-pink-950/80 border-pink-500/40',
@@ -93,21 +93,53 @@ export function saveStoredAdminSettings(settings: AdminSettings): void {
   }
 }
 
+// Inter-tab / local device broadcast channel for instantaneous zero-latency sync
+const localBroadcast = typeof window !== 'undefined' && 'BroadcastChannel' in window
+  ? new BroadcastChannel('mindsport_admin_speed_sync')
+  : null;
+
+// Registry of local active listeners
+const localListeners = new Set<(settings: AdminSettings) => void>();
+
+function notifyLocalListeners(settings: AdminSettings) {
+  for (const listener of localListeners) {
+    try {
+      listener(settings);
+    } catch (e) {
+      console.error('Error notifying speed listener:', e);
+    }
+  }
+}
+
+// Listen to local inter-tab broadcasts
+if (localBroadcast) {
+  localBroadcast.onmessage = (event) => {
+    if (event.data && event.data.settings) {
+      saveStoredAdminSettings(event.data.settings);
+      notifyLocalListeners(event.data.settings);
+    }
+  };
+}
+
 /**
  * Fetches the unified admin settings from the central server.
  * This guarantees all devices get the exact speed set by the admin.
  */
 export async function fetchRemoteAdminSettings(): Promise<AdminSettings | null> {
   try {
-    const res = await fetch('/api/game-settings', {
+    const res = await fetch(`/api/game-settings?t=${Date.now()}`, {
       method: 'GET',
-      headers: { 'Cache-Control': 'no-cache' },
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
     });
     if (!res.ok) return null;
     const data = await res.json();
     if (data.success && data.settings) {
       const merged: AdminSettings = { ...DEFAULT_ADMIN_SETTINGS, ...data.settings };
       saveStoredAdminSettings(merged);
+      notifyLocalListeners(merged);
       return merged;
     }
   } catch (err) {
@@ -122,10 +154,24 @@ export async function fetchRemoteAdminSettings(): Promise<AdminSettings | null> 
  */
 export async function syncAdminSettingsToServer(settings: AdminSettings): Promise<boolean> {
   saveStoredAdminSettings(settings);
+  notifyLocalListeners(settings);
+
+  // Broadcast to other open tabs/windows on the same machine immediately
+  if (localBroadcast) {
+    try {
+      localBroadcast.postMessage({ type: 'SPEED_UPDATED', settings });
+    } catch {
+      // ignore
+    }
+  }
+
   try {
     const res = await fetch('/api/game-settings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store',
+      },
       body: JSON.stringify({ settings }),
     });
     if (!res.ok) return false;
@@ -149,6 +195,8 @@ export function subscribeToRemoteAdminSettings(
   let eventSource: EventSource | null = null;
   let pollingInterval: NodeJS.Timeout | null = null;
 
+  localListeners.add(onUpdate);
+
   const handleIncomingSettings = (raw: any) => {
     if (!raw || typeof raw !== 'object') return;
     const updated: AdminSettings = {
@@ -164,7 +212,7 @@ export function subscribeToRemoteAdminSettings(
     onUpdate(updated);
   };
 
-  // 1. Initial fetch
+  // 1. Initial fetch from server to get true current speed
   fetchRemoteAdminSettings().then((remote) => {
     if (remote && !isCleanedUp) {
       onUpdate(remote);
@@ -196,14 +244,14 @@ export function subscribeToRemoteAdminSettings(
     console.warn('SSE subscription failed, falling back to polling:', e);
   }
 
-  // 3. Fallback short polling (every 5 seconds) to ensure all devices stay in sync
+  // 3. Fallback short polling (every 3 seconds) to ensure all devices stay in sync
   pollingInterval = setInterval(async () => {
     if (isCleanedUp) return;
     const remote = await fetchRemoteAdminSettings();
     if (remote && !isCleanedUp) {
       onUpdate(remote);
     }
-  }, 5000);
+  }, 3000);
 
   // 4. Revalidate whenever device tab gains focus or user switches back to browser
   const handleFocus = async () => {
@@ -225,6 +273,7 @@ export function subscribeToRemoteAdminSettings(
 
   return () => {
     isCleanedUp = true;
+    localListeners.delete(onUpdate);
     if (eventSource) {
       eventSource.close();
       eventSource = null;
@@ -240,18 +289,14 @@ export function subscribeToRemoteAdminSettings(
 }
 
 export function getCurrentSpeedPresetKey(settings: AdminSettings): SpeedPresetKey | 'custom' {
-  if (settings.flashIntervalMs >= 1100 || settings.gameSpeedMultiplier <= 0.75) {
+  const effective = Math.max(80, Math.round(settings.flashIntervalMs / (settings.gameSpeedMultiplier || 1.0)));
+  if (effective >= 1100) {
     return 'slow';
   }
-  if (settings.flashIntervalMs <= 450 || settings.gameSpeedMultiplier >= 1.4) {
+  if (effective <= 500) {
     return 'fast';
   }
-  if (
-    settings.flashIntervalMs >= 650 &&
-    settings.flashIntervalMs <= 950 &&
-    settings.gameSpeedMultiplier >= 0.85 &&
-    settings.gameSpeedMultiplier <= 1.2
-  ) {
+  if (effective >= 650 && effective <= 950) {
     return 'normal';
   }
   return 'custom';

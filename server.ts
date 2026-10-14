@@ -71,6 +71,9 @@ function broadcastSettingsUpdate(settings: GlobalAdminSettings) {
   for (const client of sseClients) {
     try {
       client.write(`data: ${payload}\n\n`);
+      if (typeof (client as any).flush === "function") {
+        (client as any).flush();
+      }
     } catch {
       sseClients.delete(client);
     }
@@ -80,25 +83,32 @@ function broadcastSettingsUpdate(settings: GlobalAdminSettings) {
 // Endpoint: Real-time SSE stream for game speed & settings
 app.get("/api/game-settings/events", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
   res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
   if (typeof (res as any).flushHeaders === "function") {
     (res as any).flushHeaders();
   }
 
-  // Send current settings upon connect
+  // Send current authoritative settings upon connect
   res.write(`data: ${JSON.stringify({ type: "INITIAL_SETTINGS", settings: activeGlobalSettings })}\n\n`);
+  if (typeof (res as any).flush === "function") {
+    (res as any).flush();
+  }
   sseClients.add(res);
 
   // Periodic heartbeat keepalive
   const interval = setInterval(() => {
     try {
       res.write(": keepalive\n\n");
+      if (typeof (res as any).flush === "function") {
+        (res as any).flush();
+      }
     } catch {
       clearInterval(interval);
       sseClients.delete(res);
     }
-  }, 20000);
+  }, 15000);
 
   req.on("close", () => {
     clearInterval(interval);
@@ -108,7 +118,9 @@ app.get("/api/game-settings/events", (req, res) => {
 
 // Endpoint: Get current unified game settings
 app.get("/api/game-settings", (_req, res) => {
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   res.json({
     success: true,
     settings: activeGlobalSettings,
