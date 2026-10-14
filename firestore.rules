@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Game settings are readable by all players/devices (Smartboards, mobile, desktop)
+    // and writable so the Admin's "Apply" button updates the settings globally.
+    match /game_settings/{settingId} {
+      allow read: if true;
+      allow write: if request.resource.data.flashIntervalMs is number
+                   && request.resource.data.timeLimitSeconds is number;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

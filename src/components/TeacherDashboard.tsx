@@ -393,9 +393,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <div className="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-cyan-300">
                   <Sparkles className="w-4 h-4 text-cyan-400" />
-                  الأنماط الثلاثة المعتمدة للسرعة (اضغط لاختيار وتوحيد السرعة فوراً):
+                  اختر السرعة المطلوبة ثم اضغط زر "تطبيق وتوحيد السرعة" بالأسفل:
                 </span>
-                <span className="text-[10px] font-mono text-slate-400">نقرة واحدة توحد السرعة في كامل المنظومة</span>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold">مزامنة سحابية تلقائية لكافة الأجهزة</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {(['slow', 'normal', 'fast'] as SpeedPresetKey[]).map((key) => {
@@ -407,7 +407,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     <button
                       key={key}
                       type="button"
-                      onClick={() => applySpeedPreset(key)}
+                      onClick={() => {
+                        soundEngine.playTargetActivate();
+                        setStagedSettings({
+                          ...stagedSettings,
+                          gameSpeedMultiplier: p.multiplier,
+                          flashIntervalMs: p.flashIntervalMs,
+                          timeLimitSeconds: p.timeLimitSeconds,
+                        });
+                      }}
                       className={`relative p-4 rounded-2xl border text-right transition-all flex flex-col justify-between cursor-pointer group active:scale-95 ${
                         isSelected
                           ? `bg-slate-900/90 border-2 ${p.borderColor} shadow-[0_0_30px_rgba(236,72,153,0.35)] scale-[1.02]`
@@ -417,7 +425,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-3xl drop-shadow-md">{p.icon}</span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${p.badgeColor}`}>
-                          {isSelected ? '✓ المعتمد حالياً' : p.nameEn}
+                          {isSelected ? '✓ المختار حالياً' : p.nameEn}
                         </span>
                       </div>
                       <div>
@@ -438,6 +446,34 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   );
                 })}
               </div>
+            </div>
+
+            {/* ⭐ زر تطبيق وتوحيد السرعة على جميع الأجهزة ⭐ */}
+            <div className="mb-6">
+              <button
+                type="button"
+                disabled={isSyncing}
+                onClick={handleAcceptAndApplySpeed}
+                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-70 text-slate-950 font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-3 shadow-[0_0_35px_rgba(16,185,129,0.5)] transition-all transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-full bg-slate-950 text-emerald-400 flex items-center justify-center font-black shrink-0">
+                  {isSyncing ? (
+                    <RotateCcw className="w-4 h-4 animate-spin text-emerald-400" />
+                  ) : (
+                    <Check className="w-5 h-5 stroke-[3]" />
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <span className="font-black">
+                    {isSyncing
+                      ? 'جاري التوحيد والمزامنة السحابية...'
+                      : 'تطبيق وتوحيد السرعة على جميع الأجهزة (APPLY & UNIFY)'}
+                  </span>
+                  <span className="text-xs px-3 py-1 rounded-xl bg-slate-950/80 text-emerald-300 font-mono font-bold border border-emerald-400/40">
+                    وميض: {(stagedSettings.flashIntervalMs / 1000).toFixed(2)}s • إجابة: {stagedSettings.timeLimitSeconds}s
+                  </span>
+                </div>
+              </button>
             </div>
 
             {/* ⏱️ SPEED & DURATION COUNTER CONTROLLERS ⏱️ */}

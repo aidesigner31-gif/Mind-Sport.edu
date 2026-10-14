@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "entities": {
+    "GameSettings": {
+      "title": "GameSettings",
+      "description": "Unified game speed and configuration settings across all devices",
+      "type": "object",
+      "properties": {
+        "flashIntervalMs": {
+          "type": "number",
+          "description": "Flash display duration in milliseconds"
+        },
+        "timeLimitSeconds": {
+          "type": "number",
+          "description": "Per question response time limit in seconds"
+        },
+        "gameSpeedMultiplier": {
+          "type": "number",
+          "description": "Game speed multiplier"
+        },
+        "questionCount": {
+          "type": "number",
+          "description": "Number of questions"
+        },
+        "autoAdvanceDelayMs": {
+          "type": "number",
+          "description": "Delay before auto advancing"
+        },
+        "targetLevel": {
+          "type": "number",
+          "description": "Target level"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Identifier of who updated"
+        }
+      },
+      "required": ["flashIntervalMs", "timeLimitSeconds", "gameSpeedMultiplier"]
+    }
+  },
+  "firestore": {
+    "/game_settings/{settingId}": {
+      "schema": "GameSettings",
+      "description": "Global game configuration synced across all devices"
+    }
+  }
+}
