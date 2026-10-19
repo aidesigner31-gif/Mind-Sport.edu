@@ -127,6 +127,7 @@ export default function App() {
             theme={selectedTheme}
             onBackToMenu={() => setCurrentMode('main-menu')}
             adminSettings={adminSettings}
+            onSwitchToCompetition={() => setCurrentMode('competition')}
           />
         )}
 

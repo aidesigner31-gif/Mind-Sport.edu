@@ -228,10 +228,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               <Users className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <div className="text-[10px] font-bold text-purple-400 uppercase tracking-[0.25em] mb-1 opacity-90">DUAL MACHINE</div>
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">Two Players</h3>
+              <div className="text-[10px] font-bold text-purple-400 uppercase tracking-[0.25em] mb-1 opacity-90">DUAL MACHINE • لاعبان</div>
+              <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">تحدي اللاعبين (Two Players)</h3>
               <p className="text-[11px] sm:text-xs text-slate-300/80 leading-relaxed">
-                Synchronized flashcards, head-to-head reaction battle & live split comparison.
+                مواجهة ثنائية حية بجهازين ثلاثيي الأبعاد وسرعة وميض موحدة من الأدمن.
               </p>
             </div>
           </button>
@@ -242,17 +242,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               soundEngine.playTargetActivate();
               onSelectMode('competition');
             }}
-            className="group relative p-5 sm:p-6 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 hover:border-amber-400/60 hover:bg-white/10 transition-all duration-300 text-left flex flex-col justify-between overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_35px_rgba(245,158,11,0.25)] hover:-translate-y-1 cursor-pointer"
+            className="group relative p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-white/5 to-purple-500/10 backdrop-blur-xl border border-amber-400/40 hover:border-amber-400 hover:bg-white/10 transition-all duration-300 text-left flex flex-col justify-between overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_35px_rgba(245,158,11,0.35)] hover:-translate-y-1 cursor-pointer"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all" />
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/15 text-amber-300 border border-amber-400/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 rounded-full blur-2xl group-hover:bg-amber-500/25 transition-all" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(245,158,11,0.3)]">
               <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <div className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.25em] mb-1 opacity-90">CHAMPIONSHIP</div>
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">Competition</h3>
-              <p className="text-[11px] sm:text-xs text-slate-300/80 leading-relaxed">
-                Classroom eSports leaderboard tournament sorted by Score, Speed, and Accuracy.
+              <div className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.25em] mb-1 opacity-90">CHAMPIONSHIP • شاشة المسابقة</div>
+              <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">المسابقة (Competition) 🏆</h3>
+              <p className="text-[11px] sm:text-xs text-slate-300/90 leading-relaxed">
+                واجهة المسابقة للسبورات الذكية: دائرة السؤال بالمنتصف، أرقام مبعثرة متطابقة، وكأس البطولة للفائز!
               </p>
             </div>
           </button>

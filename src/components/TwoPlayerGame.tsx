@@ -13,6 +13,7 @@ interface TwoPlayerGameProps {
   theme: LEDTheme;
   onBackToMenu: () => void;
   adminSettings?: AdminSettings;
+  onSwitchToCompetition?: () => void;
 }
 
 
@@ -26,7 +27,12 @@ interface QuestionHistoryItem {
   p2IsCorrect: boolean;
 }
 
-export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMenu, adminSettings }) => {
+export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
+  theme,
+  onBackToMenu,
+  adminSettings,
+  onSwitchToCompetition,
+}) => {
   const activeAdminSettings = adminSettings || DEFAULT_ADMIN_SETTINGS;
   const speedInfo = React.useMemo(() => getActiveSpeedInfo(activeAdminSettings), [activeAdminSettings]);
   const flashMs = speedInfo.effectiveFlashMs;
@@ -476,9 +482,31 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({ theme, onBackToMen
             Synchronized Hologram Arena
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-white mb-1">SPLIT SCREEN HEAD-TO-HEAD</h2>
-          <p className="text-xs text-slate-300/80 max-w-md mb-6 leading-relaxed">
+          <p className="text-xs text-slate-300/80 max-w-md mb-4 leading-relaxed">
             لاعبان في مواجهة مباشرة! تظهر المسائل الرقمية في وقت واحد، ويقوم كل لاعب بكتابة النتيجة وإرسالها بشكل مستقل!
           </p>
+
+          {/* Quick Switch to Official Whiteboard Video Competition */}
+          {onSwitchToCompetition && (
+            <button
+              onClick={() => {
+                soundEngine.playTargetActivate();
+                onSwitchToCompetition();
+              }}
+              className="w-full mb-5 p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-cyan-500/20 hover:from-amber-500/30 hover:to-cyan-500/30 border border-amber-400/40 text-amber-200 hover:text-white font-bold text-xs flex items-center justify-between transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-amber-400" />
+                <span className="font-black">شاشة المسابقة المعتمدة (فيديو السبورة الذكية):</span>
+                <span className="text-[11px] opacity-90 text-slate-300 hidden sm:inline">
+                  دائرة السؤال بالمنتصف، أرقام مبعثرة متطابقة، وكأس الفوز
+                </span>
+              </div>
+              <span className="px-2.5 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-[10px] uppercase shadow">
+                فتح المسابقة 🏆
+              </span>
+            </button>
+          )}
 
           {/* Difficulty Mode Selector Tabs (Easy / Complex) */}
           <div className="w-full mb-5">
