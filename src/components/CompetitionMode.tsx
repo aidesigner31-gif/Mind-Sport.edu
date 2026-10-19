@@ -41,25 +41,42 @@ interface RoundHistory {
   p2TimeSec: number;
 }
 
-// Fixed scattered coordinates for the 10 digit circles (0-9) as shown in the video whiteboard:
-// Notice: Organic/scattered non-grid positions, identical on left and right contestants' sides
+// Dedicated scattered coordinates for Player 1 (Left Half) and Player 2 (Right Half)
+// Calibrated with ample clearance around the central question cell so NO number is ever covered or obscured
 interface ButtonPos {
   digit: number;
   top: string;
   left: string;
 }
 
-const SCATTERED_DIGIT_LAYOUT: ButtonPos[] = [
-  { digit: 6, top: '14%', left: '26%' },
-  { digit: 7, top: '14%', left: '74%' },
-  { digit: 5, top: '35%', left: '18%' },
-  { digit: 9, top: '35%', left: '72%' },
-  { digit: 0, top: '56%', left: '16%' },
-  { digit: 4, top: '55%', left: '46%' },
-  { digit: 3, top: '56%', left: '78%' },
-  { digit: 8, top: '78%', left: '18%' },
-  { digit: 1, top: '78%', left: '46%' },
-  { digit: 2, top: '78%', left: '78%' },
+// Player 1 (Left Half): Central question cell is to the right (x ~ 85%-100%, y ~ 35%-65%)
+// All numbers in the middle vertical band stay comfortably below left: 50%
+export const P1_SCATTERED_LAYOUT: ButtonPos[] = [
+  { digit: 6, top: '12%', left: '26%' }, // Top-left (well clear)
+  { digit: 7, top: '12%', left: '72%' }, // Top-right (above central cell)
+  { digit: 5, top: '34%', left: '16%' }, // Mid-upper-left
+  { digit: 9, top: '32%', left: '46%' }, // Mid-upper-center
+  { digit: 0, top: '52%', left: '14%' }, // Mid-left
+  { digit: 4, top: '52%', left: '44%' }, // Mid-center
+  { digit: 3, top: '70%', left: '26%' }, // Mid-lower-left
+  { digit: 8, top: '86%', left: '18%' }, // Bottom-left
+  { digit: 1, top: '86%', left: '46%' }, // Bottom-center
+  { digit: 2, top: '86%', left: '74%' }, // Bottom-right (below central cell)
+];
+
+// Player 2 (Right Half): Central question cell is to the left (x ~ 0%-15%, y ~ 35%-65%)
+// Symmetrically mirrored so Player 2 has identical distance & fairness with zero overlap
+export const P2_SCATTERED_LAYOUT: ButtonPos[] = [
+  { digit: 6, top: '12%', left: '74%' }, // Top-right
+  { digit: 7, top: '12%', left: '28%' }, // Top-left (above central cell)
+  { digit: 5, top: '34%', left: '84%' }, // Mid-upper-right
+  { digit: 9, top: '32%', left: '54%' }, // Mid-upper-center
+  { digit: 0, top: '52%', left: '86%' }, // Mid-right
+  { digit: 4, top: '52%', left: '56%' }, // Mid-center
+  { digit: 3, top: '70%', left: '74%' }, // Mid-lower-right
+  { digit: 8, top: '86%', left: '82%' }, // Bottom-right
+  { digit: 1, top: '86%', left: '54%' }, // Bottom-center
+  { digit: 2, top: '86%', left: '26%' }, // Bottom-left (below central cell)
 ];
 
 export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, adminSettings }) => {
@@ -825,27 +842,27 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
             {/* Central Dividing Line (as drawn by the teacher in the video) */}
             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1.5 bg-gradient-to-b from-cyan-500/30 via-slate-600/60 to-purple-500/30 z-0 pointer-events-none" />
 
-            {/* ⭐ THE BIG CENTRAL QUESTION CIRCLE / CELL (دائرة السؤال الكبرى في المنتصف) ⭐ */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center justify-center">
-              {/* Outer Glowing Ring */}
+            {/* ⭐ THE CENTRAL QUESTION CIRCLE / CELL (دائرة السؤال في المنتصف بحجم متناسق ومدروس) ⭐ */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center pointer-events-none select-none">
+              {/* Central Glowing Cell */}
               <div
-                className={`relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 rounded-full flex flex-col items-center justify-center p-2 transition-all duration-300 shadow-[0_0_60px_rgba(0,0,0,0.9)] ${
+                className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full flex flex-col items-center justify-center p-1.5 transition-all duration-300 shadow-[0_0_40px_rgba(0,0,0,0.9)] ${
                   isShowingSeq
-                    ? 'bg-gradient-to-tr from-cyan-900/90 via-slate-900/95 to-purple-900/90 border-4 border-amber-400 shadow-[0_0_50px_rgba(245,158,11,0.5)] scale-105'
+                    ? 'bg-gradient-to-tr from-cyan-950 via-slate-900 to-purple-950 border-3 sm:border-4 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.5)] scale-105'
                     : roundRevealed
-                    ? 'bg-gradient-to-tr from-emerald-950 via-slate-900 to-emerald-900 border-4 border-emerald-400 shadow-[0_0_50px_rgba(16,185,129,0.5)]'
-                    : 'bg-slate-950/90 border-4 border-cyan-400/80 shadow-[0_0_40px_rgba(6,182,212,0.3)]'
+                    ? 'bg-gradient-to-tr from-emerald-950 via-slate-900 to-emerald-900 border-3 sm:border-4 border-emerald-400 shadow-[0_0_35px_rgba(16,185,129,0.5)]'
+                    : 'bg-slate-950/95 border-3 sm:border-4 border-cyan-400/80 shadow-[0_0_30px_rgba(6,182,212,0.3)]'
                 }`}
               >
                 {/* Secondary inner ring */}
-                <div className="w-full h-full rounded-full border border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden bg-radial from-slate-800/40 to-slate-950">
+                <div className="w-full h-full rounded-full border border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden bg-radial from-slate-800/50 to-slate-950">
                   {/* Flashing content */}
                   {isShowingSeq ? (
                     <div className="flex flex-col items-center justify-center animate-pulse">
-                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">
+                      <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">
                         انتبه للرقم!
                       </span>
-                      <span className="text-4xl sm:text-5xl md:text-6xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_20px_rgba(245,158,11,0.8)]">
+                      <span className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_20px_rgba(245,158,11,0.9)]">
                         {activeToken ? (
                           activeToken.value.startsWith('-')
                             ? activeToken.value
@@ -857,24 +874,24 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                     </div>
                   ) : roundRevealed ? (
                     <div className="flex flex-col items-center justify-center animate-bounce">
-                      <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5">
+                      <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5">
                         الإجابة الصحيحة
                       </span>
-                      <span className="text-3xl sm:text-4xl md:text-5xl font-black font-mono text-emerald-300 drop-shadow-[0_0_20px_rgba(16,185,129,0.9)]">
+                      <span className="text-2xl sm:text-3xl md:text-4xl font-black font-mono text-emerald-300 drop-shadow-[0_0_20px_rgba(16,185,129,0.9)]">
                         = {questions[currentRound]?.answer}
                       </span>
                     </div>
                   ) : (
                     /* Answer Phase / Countdown */
                     <div className="flex flex-col items-center justify-center text-center">
-                      <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1 flex items-center gap-1">
-                        <Zap className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                      <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest mb-0.5 flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-amber-400 animate-spin" />
                         احسب وانقر!
                       </span>
-                      <span className="text-3xl sm:text-4xl font-black font-mono text-white">
+                      <span className="text-2xl sm:text-3xl md:text-4xl font-black font-mono text-white">
                         {roundTimeRemaining.toFixed(1)}s
                       </span>
-                      <div className="w-20 sm:w-24 bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+                      <div className="w-16 sm:w-20 bg-slate-800 h-1 rounded-full overflow-hidden mt-1">
                         <div
                           className="h-full bg-gradient-to-r from-amber-400 to-rose-500 transition-all duration-100"
                           style={{ width: `${(roundTimeRemaining / qTimeLimit) * 100}%` }}
@@ -886,8 +903,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
               </div>
 
               {/* Central Title Tag */}
-              <div className="mt-1 px-3 py-0.5 rounded-full bg-slate-900/90 border border-white/15 text-[9px] font-bold text-slate-300 shadow">
-                {isShowingSeq ? 'جارٍ وميض السؤال' : roundRevealed ? 'نتيجة الجولة' : 'وقت الإجابة السريعة'}
+              <div className="mt-1 px-2.5 py-0.5 rounded-full bg-slate-900/95 border border-white/20 text-[8px] sm:text-[9px] font-bold text-slate-300 shadow">
+                {isShowingSeq ? 'وميض السؤال' : roundRevealed ? 'نتيجة الجولة' : 'الإجابة السريعة'}
               </div>
             </div>
 
@@ -896,13 +913,13 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
               {/* ========================================================
                   LEFT HALF: PLAYER 1 (Cyan / Electric Neon)
                  ======================================================== */}
-              <div className="relative h-full flex flex-col justify-between p-3 sm:p-5 border-r border-white/5">
+              <div className="relative h-full flex flex-col justify-between p-2 sm:p-4 border-r border-white/5">
                 {/* P1 Top Stats Header */}
-                <div className="w-full flex items-center justify-between bg-slate-950/70 backdrop-blur-md border border-cyan-500/30 rounded-2xl px-3 py-2 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+                <div className="w-full flex items-center justify-between bg-slate-950/70 backdrop-blur-md border border-cyan-500/30 rounded-2xl px-3 py-1.5 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.8)] animate-pulse" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.8)] animate-pulse" />
                     <div>
-                      <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">
+                      <div className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest">
                         المتسابق الأول
                       </div>
                       <div className="text-xs sm:text-sm font-black text-white">{p1Name}</div>
@@ -910,23 +927,23 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                   </div>
 
                   {/* P1 Live Input & Score */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5">
                     <div className="text-right">
-                      <div className="text-[9px] text-slate-400 font-bold uppercase">المدخل:</div>
-                      <div className="text-sm sm:text-base font-black font-mono text-cyan-300 min-w-[32px] text-center bg-cyan-950/60 border border-cyan-400/40 px-2 rounded-lg">
+                      <div className="text-[8px] text-slate-400 font-bold uppercase">المدخل:</div>
+                      <div className="text-xs sm:text-sm font-black font-mono text-cyan-300 min-w-[28px] text-center bg-cyan-950/60 border border-cyan-400/40 px-1.5 py-0.5 rounded-lg">
                         {p1Digits || '—'}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[9px] text-slate-400 font-bold uppercase">النقاط:</div>
-                      <div className="text-sm sm:text-base font-black text-white">{p1Score}</div>
+                      <div className="text-[8px] text-slate-400 font-bold uppercase">النقاط:</div>
+                      <div className="text-xs sm:text-sm font-black text-white">{p1Score}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* P1 Organic Scattered Number Circles (0-9) as in Video! */}
-                <div className="relative flex-1 w-full my-2 min-h-[340px] sm:min-h-[400px]">
-                  {SCATTERED_DIGIT_LAYOUT.map((item) => (
+                {/* P1 Organic Scattered Number Circles (0-9) - 100% Unobscured & Fully Visible! */}
+                <div className="relative flex-1 w-full my-1 min-h-[360px] sm:min-h-[420px]">
+                  {P1_SCATTERED_LAYOUT.map((item) => (
                     <button
                       key={`p1_${item.digit}`}
                       onClick={() => handleP1Digit(item.digit)}
@@ -936,10 +953,10 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                         left: item.left,
                         transform: 'translate(-50%, -50%)',
                       }}
-                      className={`absolute w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full font-black text-2xl sm:text-3xl md:text-4xl transition-all duration-150 flex items-center justify-center cursor-pointer select-none active:scale-90 ${
+                      className={`absolute z-10 w-13 h-13 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 rounded-full font-black text-2xl sm:text-3xl md:text-4xl transition-all duration-150 flex items-center justify-center cursor-pointer select-none active:scale-90 ${
                         isShowingSeq || p1Submitted
                           ? 'bg-slate-900/60 border-2 border-slate-700/60 text-slate-500 opacity-60 cursor-not-allowed'
-                          : 'bg-gradient-to-b from-cyan-950 via-slate-900 to-slate-950 border-3 border-cyan-400 text-cyan-300 hover:text-white hover:border-cyan-300 hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] shadow-[0_0_15px_rgba(6,182,212,0.25)]'
+                          : 'bg-gradient-to-b from-cyan-950 via-slate-900 to-slate-950 border-2 sm:border-3 border-cyan-400 text-cyan-200 hover:text-white hover:border-cyan-300 hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] shadow-[0_0_15px_rgba(6,182,212,0.25)]'
                       }`}
                     >
                       {item.digit}
@@ -948,7 +965,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
 
                   {/* Result Overlay on P1 side upon round end */}
                   {p1Submitted && (
-                    <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900/90 border border-white/20 text-xs font-bold">
+                    <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-white/20 text-xs font-bold shadow">
                       {p1LastResult === 'correct' ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -965,11 +982,11 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                 </div>
 
                 {/* P1 Bottom Utility Buttons (Clear / Backspace / Submit) */}
-                <div className="w-full flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+                <div className="w-full flex items-center justify-between gap-2 pt-1.5 border-t border-white/5">
                   <button
                     onClick={handleP1Clear}
                     disabled={isShowingSeq || p1Submitted || isMatchOver || !p1Digits}
-                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 text-[11px] font-bold flex items-center gap-1 transition-all disabled:opacity-40"
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 text-[10px] sm:text-[11px] font-bold flex items-center gap-1 transition-all disabled:opacity-40"
                   >
                     <Delete className="w-3.5 h-3.5" />
                     <span>مسح</span>
@@ -978,7 +995,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                   <button
                     onClick={handleP1Backspace}
                     disabled={isShowingSeq || p1Submitted || isMatchOver || !p1Digits}
-                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 text-[11px] font-bold flex items-center gap-1 transition-all disabled:opacity-40"
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 text-[10px] sm:text-[11px] font-bold flex items-center gap-1 transition-all disabled:opacity-40"
                   >
                     <span>⌫ تراجع</span>
                   </button>
@@ -996,15 +1013,15 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
 
               {/* ========================================================
                   RIGHT HALF: PLAYER 2 (Fuchsia / Laser Purple)
-                  (Exact Same Scattered Distribution As Left Player!)
+                  (Exact Same Symmetrical Distance with ZERO Overlap!)
                  ======================================================== */}
-              <div className="relative h-full flex flex-col justify-between p-3 sm:p-5 border-l border-white/5">
+              <div className="relative h-full flex flex-col justify-between p-2 sm:p-4 border-l border-white/5">
                 {/* P2 Top Stats Header */}
-                <div className="w-full flex items-center justify-between bg-slate-950/70 backdrop-blur-md border border-purple-500/30 rounded-2xl px-3 py-2 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+                <div className="w-full flex items-center justify-between bg-slate-950/70 backdrop-blur-md border border-purple-500/30 rounded-2xl px-3 py-1.5 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.8)] animate-pulse" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.8)] animate-pulse" />
                     <div>
-                      <div className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">
+                      <div className="text-[9px] font-bold text-purple-400 uppercase tracking-widest">
                         {playMode === 'vs-bot' ? 'المنافس الآلي' : 'المتسابق الثاني'}
                       </div>
                       <div className="text-xs sm:text-sm font-black text-white">{p2Name}</div>
@@ -1012,23 +1029,23 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                   </div>
 
                   {/* P2 Live Input & Score */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5">
                     <div className="text-right">
-                      <div className="text-[9px] text-slate-400 font-bold uppercase">المدخل:</div>
-                      <div className="text-sm sm:text-base font-black font-mono text-purple-300 min-w-[32px] text-center bg-purple-950/60 border border-purple-400/40 px-2 rounded-lg">
+                      <div className="text-[8px] text-slate-400 font-bold uppercase">المدخل:</div>
+                      <div className="text-xs sm:text-sm font-black font-mono text-purple-300 min-w-[28px] text-center bg-purple-950/60 border border-purple-400/40 px-1.5 py-0.5 rounded-lg">
                         {p2Digits || '—'}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[9px] text-slate-400 font-bold uppercase">النقاط:</div>
-                      <div className="text-sm sm:text-base font-black text-white">{p2Score}</div>
+                      <div className="text-[8px] text-slate-400 font-bold uppercase">النقاط:</div>
+                      <div className="text-xs sm:text-sm font-black text-white">{p2Score}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* P2 Organic Scattered Number Circles (0-9) - Identical Layout to Left Side! */}
-                <div className="relative flex-1 w-full my-2 min-h-[340px] sm:min-h-[400px]">
-                  {SCATTERED_DIGIT_LAYOUT.map((item) => (
+                {/* P2 Organic Scattered Number Circles (0-9) - 100% Unobscured & Fully Visible! */}
+                <div className="relative flex-1 w-full my-1 min-h-[360px] sm:min-h-[420px]">
+                  {P2_SCATTERED_LAYOUT.map((item) => (
                     <button
                       key={`p2_${item.digit}`}
                       onClick={() => handleP2Digit(item.digit)}
@@ -1038,10 +1055,10 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                         left: item.left,
                         transform: 'translate(-50%, -50%)',
                       }}
-                      className={`absolute w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full font-black text-2xl sm:text-3xl md:text-4xl transition-all duration-150 flex items-center justify-center cursor-pointer select-none active:scale-90 ${
+                      className={`absolute z-10 w-13 h-13 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 rounded-full font-black text-2xl sm:text-3xl md:text-4xl transition-all duration-150 flex items-center justify-center cursor-pointer select-none active:scale-90 ${
                         isShowingSeq || p2Submitted || playMode === 'vs-bot'
                           ? 'bg-slate-900/60 border-2 border-slate-700/60 text-slate-500 opacity-60 cursor-not-allowed'
-                          : 'bg-gradient-to-b from-purple-950 via-slate-900 to-slate-950 border-3 border-purple-400 text-purple-300 hover:text-white hover:border-purple-300 hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] shadow-[0_0_15px_rgba(168,85,247,0.25)]'
+                          : 'bg-gradient-to-b from-purple-950 via-slate-900 to-slate-950 border-2 sm:border-3 border-purple-400 text-purple-200 hover:text-white hover:border-purple-300 hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] shadow-[0_0_15px_rgba(168,85,247,0.25)]'
                       }`}
                     >
                       {item.digit}
@@ -1050,7 +1067,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
 
                   {/* Result Overlay on P2 side upon round end */}
                   {p2Submitted && (
-                    <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900/90 border border-white/20 text-xs font-bold">
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/95 border border-white/20 text-xs font-bold shadow">
                       {p2LastResult === 'correct' ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -1067,11 +1084,11 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                 </div>
 
                 {/* P2 Bottom Utility Buttons (Clear / Backspace / Submit) */}
-                <div className="w-full flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+                <div className="w-full flex items-center justify-between gap-2 pt-1.5 border-t border-white/5">
                   <button
                     onClick={handleP2Clear}
                     disabled={isShowingSeq || p2Submitted || isMatchOver || !p2Digits || playMode === 'vs-bot'}
-                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 text-[11px] font-bold flex items-center gap-1 transition-all disabled:opacity-40"
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 text-[10px] sm:text-[11px] font-bold flex items-center gap-1 transition-all disabled:opacity-40"
                   >
                     <Delete className="w-3.5 h-3.5" />
                     <span>مسح</span>
@@ -1080,7 +1097,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                   <button
                     onClick={handleP2Backspace}
                     disabled={isShowingSeq || p2Submitted || isMatchOver || !p2Digits || playMode === 'vs-bot'}
-                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 text-[11px] font-bold flex items-center gap-1 transition-all disabled:opacity-40"
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-300 text-[10px] sm:text-[11px] font-bold flex items-center gap-1 transition-all disabled:opacity-40"
                   >
                     <span>⌫ تراجع</span>
                   </button>
