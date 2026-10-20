@@ -442,139 +442,94 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
 
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-between p-3 md:p-6 select-none">
-      {/* Top Header / HUD */}
+      {/* Top Header */}
       <header className="relative z-10 w-full max-w-7xl flex items-center justify-between pb-3 border-b border-pink-500/20">
         <button
           onClick={onBackToMenu}
-          className="px-4 py-2 rounded-2xl bg-pink-950/40 hover:bg-pink-900/40 backdrop-blur-md border border-pink-500/30 hover:border-pink-400 text-slate-200 hover:text-white flex items-center gap-2 text-xs font-bold uppercase transition-all shadow-lg shadow-pink-500/10"
+          className="px-4 py-2 rounded-2xl bg-pink-950/40 hover:bg-pink-900/40 backdrop-blur-md border border-pink-500/30 hover:border-pink-400 text-slate-200 hover:text-white flex items-center gap-2 text-xs font-bold uppercase transition-all shadow-lg shadow-pink-500/10 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 text-pink-400" />
           <span className="hidden sm:inline">MENU</span>
         </button>
 
-        {/* SPEEDDIGITS Brand Title */}
+        {/* Speed Digits Brand Title */}
         <div className="text-center">
           <h1 className="text-xl sm:text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-300 to-purple-400 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">
-            SPEEDDIGITS
+            Speed Digits
           </h1>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-xl bg-purple-500/15 backdrop-blur-md border border-purple-400/30 text-purple-300 font-black text-xs uppercase flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
-            <Users className="w-4 h-4 text-purple-400" />
-            <span className="hidden sm:inline">TWO PLAYER</span> DUAL ARENA
-          </div>
-          <div className="px-3 py-1.5 rounded-xl bg-pink-500/15 backdrop-blur-md border border-pink-400/30 text-pink-300 font-black text-xs uppercase flex items-center gap-1.5">
-            <span>LEVEL {level} • {isComplex ? 'COMPLEX / متقدم' : 'EASY / سهل'} • {speedInfo.icon} {speedInfo.displayNameAr} ({speedInfo.effectiveFlashMs}ms)</span>
-            <Lock className="w-3 h-3 text-pink-400" />
+          <div className="px-3.5 py-1.5 rounded-xl bg-purple-500/15 backdrop-blur-md border border-purple-400/30 text-purple-300 font-bold text-xs uppercase">
+            Two Players • Level {level} {isComplex ? '• Complex' : ''}
           </div>
         </div>
       </header>
 
       {!isPlaying && !isGameOver ? (
-        /* Setup Arena screen */
+        /* Setup Arena screen: ONLY Title, Mode, and Level */
         <div className="relative z-10 my-auto w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center">
           <div className="w-14 h-14 rounded-3xl bg-purple-500/15 text-purple-300 border border-purple-400/30 flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
             <Users className="w-7 h-7 text-purple-400" />
           </div>
 
-          <div className="text-[10px] font-bold tracking-[0.3em] text-purple-400 uppercase mb-1 opacity-80">
-            Synchronized Hologram Arena
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-1">SPLIT SCREEN HEAD-TO-HEAD</h2>
-          <p className="text-xs text-slate-300/80 max-w-md mb-4 leading-relaxed">
-            لاعبان في مواجهة مباشرة! تظهر المسائل الرقمية في وقت واحد، ويقوم كل لاعب بكتابة النتيجة وإرسالها بشكل مستقل!
-          </p>
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-5">Two Players</h2>
 
-          {/* Quick Switch to Official Whiteboard Video Competition */}
+          {/* Quick Switch to Competition Mode */}
           {onSwitchToCompetition && (
             <button
               onClick={() => {
                 soundEngine.playTargetActivate();
                 onSwitchToCompetition();
               }}
-              className="w-full mb-5 p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-cyan-500/20 hover:from-amber-500/30 hover:to-cyan-500/30 border border-amber-400/40 text-amber-200 hover:text-white font-bold text-xs flex items-center justify-between transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] cursor-pointer"
+              className="w-full mb-6 p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-cyan-500/20 hover:from-amber-500/30 hover:to-cyan-500/30 border border-amber-400/40 text-amber-200 hover:text-white font-bold text-xs flex items-center justify-between transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-400" />
-                <span className="font-black">شاشة المسابقة المعتمدة (فيديو السبورة الذكية):</span>
-                <span className="text-[11px] opacity-90 text-slate-300 hidden sm:inline">
-                  دائرة السؤال بالمنتصف، أرقام مبعثرة متطابقة، وكأس الفوز
-                </span>
+                <span className="font-bold">Competition Mode 🏆</span>
               </div>
               <span className="px-2.5 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-[10px] uppercase shadow">
-                فتح المسابقة 🏆
+                Open
               </span>
             </button>
           )}
 
-          {/* Difficulty Mode Selector Tabs (Easy / Complex) */}
-          <div className="w-full mb-5">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
-              <span>اختر الوضع / SELECT MODE</span>
+          {/* Mode Selector (Easy / Complex) */}
+          <div className="w-full mb-6">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+              Mode
             </div>
             <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-950/60 rounded-2xl border border-white/10">
               <button
                 type="button"
                 onClick={() => setIsComplex(false)}
-                className={`py-2.5 px-4 rounded-xl text-xs font-black transition-all flex flex-col items-center gap-0.5 ${
+                className={`py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   !isComplex
-                    ? 'bg-emerald-500/20 border border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                    ? 'bg-purple-500/20 border border-purple-400 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <span className="text-sm font-bold">الوضع السهل</span>
-                <span className="text-[10px] opacity-80">EASY MODE</span>
+                <span>Easy Mode</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsComplex(true)}
-                className={`py-2.5 px-4 rounded-xl text-xs font-black transition-all flex flex-col items-center gap-0.5 ${
+                className={`py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   isComplex
                     ? 'bg-purple-500/20 border border-purple-400 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <span className="text-sm font-bold">الوضع المتقدم</span>
-                <span className="text-[10px] opacity-80">COMPLEX MODE</span>
+                <span>Complex Mode</span>
               </button>
             </div>
           </div>
 
-          {/* Speed Info (Exclusively Locked & Controlled by Admin) */}
-          <div className="w-full mb-5 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-950/90 via-slate-900/90 to-slate-950/90 border border-purple-500/30 flex items-center justify-between shadow-[0_0_20px_rgba(168,85,247,0.15)]">
-            <div className="flex items-center gap-3 text-right">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400 text-purple-300 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(168,85,247,0.3)]">
-                {speedInfo.icon}
-              </div>
-              <div>
-                <div className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
-                  <span>سرعة اللعبة: {speedInfo.displayNameAr}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    موحدة لجميع الأجهزة
-                  </span>
-                </div>
-                <div className="text-[10px] text-slate-300/80 font-mono mt-0.5">
-                  وميض الرقم: <span className="text-cyan-300 font-bold">{speedInfo.effectiveFlashMs}ms</span> • وقت الإجابة: <span className="text-purple-300 font-bold">{speedInfo.timeLimitSec}s</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="hidden sm:block text-left text-[10px] font-mono">
-              <div className="text-slate-400 font-medium">ADMIN UNIFIED</div>
-              <div className="text-emerald-400 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                ALL DEVICES
-              </div>
-            </div>
-          </div>
-
-          {/* Level 0 to 6 Selection Grid */}
+          {/* Level 0 to 6 Selection */}
           <div className="w-full mb-8">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
-              <span>اختر المستوى / SELECT LEVEL</span>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+              Level
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
               {[0, 1, 2, 3, 4, 5, 6].map((l) => (
@@ -582,7 +537,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
                   key={l}
                   type="button"
                   onClick={() => setLevel(l)}
-                  className={`p-3 rounded-2xl border transition-all flex flex-col items-center justify-center gap-0.5 ${
+                  className={`p-3 rounded-2xl border transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                     level === l
                       ? 'bg-purple-500/20 border-purple-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)] scale-105'
                       : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20'
@@ -590,7 +545,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
                 >
                   <span className="text-xs font-black text-purple-300">Level {l}</span>
                   <span className="text-[10px] font-bold opacity-80">
-                    {l === 0 ? 'Starter (تمهيدي)' : `Lvl ${l}`}
+                    {l === 0 ? 'Starter' : `Lvl ${l}`}
                   </span>
                 </button>
               ))}
@@ -600,16 +555,14 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
           <button
             onClick={startMatch}
             disabled={isFetchingQuestions}
-            className="w-full py-4 rounded-2xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3"
+            className="w-full py-4 rounded-2xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3 cursor-pointer"
           >
             {isFetchingQuestions ? (
               <Zap className="w-5 h-5 animate-spin fill-slate-950" />
             ) : (
               <Flame className="w-5 h-5 fill-slate-950" />
             )}
-            {isFetchingQuestions
-              ? 'GENERATING MATCH...'
-              : `START BATTLE - LEVEL ${level} (${isComplex ? 'COMPLEX' : 'EASY'})`}
+            <span>{isFetchingQuestions ? 'Starting...' : 'Start Battle'}</span>
           </button>
         </div>
       ) : isGameOver ? (
@@ -631,52 +584,34 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
           onMenu={onBackToMenu}
         />
       ) : (
-        /* Split Screen Dual Machine & Answer Keypads Arena */
-        <div className="relative z-10 w-full max-w-7xl flex-1 flex flex-col gap-3 my-auto py-2">
-          {/* Central Arena Match HUD (Time & Round Progress) */}
-          <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 px-4 py-2 rounded-2xl flex items-center justify-between shadow-[0_0_20px_rgba(255,255,255,0.05)] text-xs font-black">
+        /* Split Screen Dual Machine Arena */
+        <div className="relative z-10 w-full max-w-7xl flex-1 flex flex-col gap-2.5 my-auto py-1">
+          {/* Streamlined Match HUD: Round & Time */}
+          <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 px-4 py-2 rounded-2xl flex items-center justify-between shadow text-xs font-bold">
             <div className="flex items-center gap-2 text-cyan-400">
-              <span className="text-[10px] uppercase text-slate-400">الجولة / ROUND:</span>
+              <span className="text-[10px] uppercase text-slate-400">Round:</span>
               <span className="text-sm font-mono text-white">{currentQIndex + 1} / {questions.length}</span>
-              {questions[currentQIndex]?.displayTitle && (
-                <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-lg hidden sm:inline-block">
-                  {questions[currentQIndex].displayTitle}
-                </span>
-              )}
             </div>
 
-            <div className="flex items-center gap-2 text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-xl">
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              <span>الوقت الإجمالي / TIME: <span className="font-mono text-sm text-white">{formatMMSS(elapsedTime)}</span></span>
-            </div>
-
-            <div className="flex items-center gap-2 text-purple-400">
-              <span className="text-[10px] uppercase text-slate-400">SPEED:</span>
-              <span className="text-xs uppercase text-purple-300 font-bold">{speedInfo.icon} {speedInfo.displayNameAr} ({speedInfo.effectiveFlashMs}ms)</span>
+            <div className="flex items-center gap-2 text-amber-300">
+              <span className="text-[10px] uppercase text-slate-400">Time:</span>
+              <span className="font-mono text-sm text-white">{formatMMSS(elapsedTime)}</span>
             </div>
           </div>
 
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* PLAYER 1 COLUMN */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               {/* P1 Score Banner */}
-              <div className="bg-slate-950/80 backdrop-blur-md border border-cyan-400/40 px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-[0_0_20px_rgba(0,240,255,0.15)]">
+              <div className="bg-slate-950/80 backdrop-blur-md border border-cyan-400/40 px-4 py-2 rounded-2xl flex items-center justify-between shadow">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
-                  <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">
-                    PLAYER 1 / اللاعب 1
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="text-xs font-black text-cyan-400 uppercase tracking-wider">
+                    Player 1
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
-                    دقة %{p1LiveAcc}
-                  </span>
-                  {p1Combo > 1 && (
-                    <span className="text-xs font-black text-amber-400 flex items-center gap-1">
-                      <Flame className="w-3.5 h-3.5" /> {p1Combo}x
-                    </span>
-                  )}
-                  <span className="text-lg sm:text-xl font-black text-white">{p1Score} PTS</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg font-black text-white">{p1Score} PTS</span>
                 </div>
               </div>
 
@@ -701,25 +636,17 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
             </div>
 
             {/* PLAYER 2 COLUMN */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               {/* P2 Score Banner */}
-              <div className="bg-slate-950/80 backdrop-blur-md border border-purple-400/40 px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+              <div className="bg-slate-950/80 backdrop-blur-md border border-purple-400/40 px-4 py-2 rounded-2xl flex items-center justify-between shadow">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" />
-                  <span className="text-xs font-black text-purple-400 uppercase tracking-widest">
-                    PLAYER 2 / اللاعب 2
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
+                  <span className="text-xs font-black text-purple-400 uppercase tracking-wider">
+                    Player 2
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
-                    دقة %{p2LiveAcc}
-                  </span>
-                  {p2Combo > 1 && (
-                    <span className="text-xs font-black text-amber-400 flex items-center gap-1">
-                      <Flame className="w-3.5 h-3.5" /> {p2Combo}x
-                    </span>
-                  )}
-                  <span className="text-lg sm:text-xl font-black text-white">{p2Score} PTS</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg font-black text-white">{p2Score} PTS</span>
                 </div>
               </div>
 

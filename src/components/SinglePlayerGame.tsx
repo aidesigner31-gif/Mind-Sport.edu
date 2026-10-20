@@ -6,7 +6,7 @@ import { StartCountdown } from './StartCountdown';
 import { Question, LEDTheme, FlashCardToken, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
 import { fetchQuestionsForLevel, convertPromptSeqToTerms } from '../utils/questionsBank';
-import { ArrowLeft, RotateCcw, Zap, Award, Flame, CheckCircle2, AlertCircle, Sparkles, Gauge, Lock } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Zap, Award, Flame, CheckCircle2, AlertCircle, Sparkles, Gauge, Lock, Play } from 'lucide-react';
 import { THREE_SPEED_PRESETS, SpeedPresetKey, getCurrentSpeedPresetKey, getActiveSpeedInfo, DEFAULT_ADMIN_SETTINGS } from '../utils/adminSettings';
 
 interface SinglePlayerGameProps {
@@ -258,136 +258,76 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
 
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-between p-4 md:p-6 select-none">
-      {/* Top HUD Controls Bar */}
+      {/* Top HUD Bar */}
       <header className="relative z-10 w-full max-w-6xl flex items-center justify-between pb-3 border-b border-pink-500/20">
         <button
           onClick={onBackToMenu}
-          className="px-4 py-2 rounded-2xl bg-pink-950/40 hover:bg-pink-900/40 backdrop-blur-md border border-pink-500/30 hover:border-pink-400 text-slate-200 hover:text-white flex items-center gap-2 text-xs font-bold uppercase transition-all shadow-lg shadow-pink-500/10"
+          className="px-4 py-2 rounded-2xl bg-pink-950/40 hover:bg-pink-900/40 backdrop-blur-md border border-pink-500/30 hover:border-pink-400 text-slate-200 hover:text-white flex items-center gap-2 text-xs font-bold uppercase transition-all shadow-lg shadow-pink-500/10 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 text-pink-400" />
           <span className="hidden sm:inline">MENU</span>
         </button>
 
-        {/* SPEEDDIGITS Brand Title */}
+        {/* Speed Digits Brand Title */}
         <div className="text-center">
           <h1 className="text-xl sm:text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-300 to-purple-400 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">
-            SPEEDDIGITS
+            Speed Digits
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-pink-950/30 backdrop-blur-md border border-pink-500/30 px-3 sm:px-4 py-1.5 rounded-xl">
-            <span className="text-[10px] font-bold text-pink-300 uppercase tracking-widest">LEVEL:</span>
-            <select
-              value={level}
-              onChange={(e) => setLevel(Number(e.target.value))}
-              disabled={isPlaying}
-              className="bg-transparent text-pink-400 font-black text-xs focus:outline-none cursor-pointer"
-            >
-              {[0, 1, 2, 3, 4, 5, 6].map((l) => (
-                <option key={l} value={l} className="bg-[#0a0f1d] text-white">
-                  Level {l} {l === 0 ? '(Easy)' : ''}
-                </option>
-              ))}
-            </select>
+        <div className="flex items-center gap-2">
+          <div className="px-3.5 py-1.5 rounded-xl bg-pink-950/40 border border-pink-500/30 text-pink-300 font-bold text-xs uppercase">
+            Level {level} {isComplex ? '• Complex' : ''}
           </div>
-
-          <button
-            onClick={() => setIsComplex(!isComplex)}
-            disabled={isPlaying}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all border backdrop-blur-md ${
-              isComplex
-                ? 'bg-purple-500/20 border-purple-400 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
-                : 'bg-white/5 border-white/10 text-slate-400'
-            }`}
-          >
-            {isComplex ? '⚡ COMPLEX' : 'STANDARD'}
-          </button>
         </div>
       </header>
 
       {/* Main Game Arena / Screens */}
       {!isPlaying && !isMatchOver ? (
+        /* Setup Screen: ONLY Title, Mode, and Level as requested */
         <div className="relative z-10 my-auto w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center">
           <div className="w-14 h-14 rounded-3xl bg-cyan-400/15 text-cyan-300 border border-cyan-400/30 flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(34,211,238,0.3)]">
-            <Zap className="w-7 h-7 fill-cyan-300" />
+            <Play className="w-7 h-7 fill-cyan-300" />
           </div>
 
-          <div className="text-[10px] font-bold tracking-[0.3em] text-cyan-400 uppercase mb-1 opacity-80">
-            Holographic Memory Module
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-1">SINGLE PLAYER MENTAL DRILL</h2>
-          <p className="text-xs text-slate-300/80 max-w-md mb-6 leading-relaxed">
-            Memorize sequential flashcards and punch illuminated target pads at high velocity.
-          </p>
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-6">Single Player</h2>
 
-          {/* Difficulty Mode Selector Tabs (Easy / Complex) */}
-          <div className="w-full mb-5">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
-              <span>اختر الوضع / SELECT MODE</span>
+          {/* Mode Selector (Easy / Complex) */}
+          <div className="w-full mb-6">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+              Mode
             </div>
             <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-950/60 rounded-2xl border border-white/10">
               <button
                 type="button"
                 onClick={() => setIsComplex(false)}
-                className={`py-2.5 px-4 rounded-xl text-xs font-black transition-all flex flex-col items-center gap-0.5 ${
+                className={`py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   !isComplex
-                    ? 'bg-emerald-500/20 border border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                    ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <span className="text-sm font-bold">الوضع السهل</span>
-                <span className="text-[10px] opacity-80">EASY MODE</span>
+                <span>Easy Mode</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsComplex(true)}
-                className={`py-2.5 px-4 rounded-xl text-xs font-black transition-all flex flex-col items-center gap-0.5 ${
+                className={`py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   isComplex
                     ? 'bg-purple-500/20 border border-purple-400 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <span className="text-sm font-bold">الوضع المتقدم</span>
-                <span className="text-[10px] opacity-80">COMPLEX MODE</span>
+                <span>Complex Mode</span>
               </button>
             </div>
           </div>
 
-          {/* Speed Info (Exclusively Locked & Controlled by Admin) */}
-          <div className="w-full mb-5 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-950/90 via-slate-900/90 to-slate-950/90 border border-pink-500/30 flex items-center justify-between shadow-[0_0_20px_rgba(236,72,153,0.15)]">
-            <div className="flex items-center gap-3 text-right">
-              <div className="w-10 h-10 rounded-xl bg-pink-500/20 border border-pink-400 text-pink-300 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(236,72,153,0.3)]">
-                {speedInfo.icon}
-              </div>
-              <div>
-                <div className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
-                  <span>سرعة اللعبة: {speedInfo.displayNameAr}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    موحدة لجميع الأجهزة
-                  </span>
-                </div>
-                <div className="text-[10px] text-slate-300/80 font-mono mt-0.5">
-                  وميض الرقم: <span className="text-cyan-300 font-bold">{speedInfo.effectiveFlashMs}ms</span> • وقت الإجابة: <span className="text-purple-300 font-bold">{speedInfo.timeLimitSec}s</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="hidden sm:block text-left text-[10px] font-mono">
-              <div className="text-slate-400 font-medium">ADMIN UNIFIED</div>
-              <div className="text-emerald-400 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                ALL DEVICES
-              </div>
-            </div>
-          </div>
-
-          {/* Level 0 to 6 Selection Grid */}
+          {/* Level 0 to 6 Selection */}
           <div className="w-full mb-8">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
-              <span>اختر المستوى / SELECT LEVEL</span>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+              Level
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
               {[0, 1, 2, 3, 4, 5, 6].map((l) => (
@@ -395,7 +335,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
                   key={l}
                   type="button"
                   onClick={() => setLevel(l)}
-                  className={`p-3 rounded-2xl border transition-all flex flex-col items-center justify-center gap-0.5 ${
+                  className={`p-3 rounded-2xl border transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                     level === l
                       ? 'bg-cyan-400/20 border-cyan-400 text-white shadow-[0_0_15px_rgba(34,211,238,0.3)] scale-105'
                       : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20'
@@ -403,7 +343,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
                 >
                   <span className="text-xs font-black text-cyan-400">Level {l}</span>
                   <span className="text-[10px] font-bold opacity-80">
-                    {l === 0 ? 'Starter (تمهيدي)' : `Lvl ${l}`}
+                    {l === 0 ? 'Starter' : `Lvl ${l}`}
                   </span>
                 </button>
               ))}
@@ -413,18 +353,18 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
           <button
             onClick={startNewGame}
             disabled={isFetchingQuestions}
-            className="w-full py-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-sm uppercase tracking-wider shadow-[0_0_30px_rgba(34,211,238,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3"
+            className="w-full py-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-sm uppercase tracking-wider shadow-[0_0_30px_rgba(34,211,238,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3 cursor-pointer"
           >
             {isFetchingQuestions ? (
               <Sparkles className="w-5 h-5 animate-spin" />
             ) : (
-              <Flame className="w-5 h-5 fill-slate-950" />
+              <Play className="w-5 h-5 fill-slate-950" />
             )}
-            {isFetchingQuestions ? 'GENERATING DRILL...' : `START DRILL - LEVEL ${level} (${isComplex ? 'COMPLEX' : 'EASY'})`}
+            <span>{isFetchingQuestions ? 'Starting...' : 'Start Game'}</span>
           </button>
         </div>
       ) : isMatchOver ? (
-        /* SPEEDDIGITS Match Results Screen */
+        /* Match Results Screen */
         <MatchResultsModal
           score={score}
           timeSeconds={elapsedTime}
@@ -436,49 +376,28 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
           onMenu={onBackToMenu}
         />
       ) : (
-        /* Active 3D Machine Arena Screen */
-        <div className="relative z-10 w-full max-w-6xl flex-1 flex flex-col lg:flex-row gap-4 sm:gap-6 items-center justify-center my-auto py-2">
-          {/* Side Match Stats Glass Panel */}
-          <div className="w-full lg:w-60 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-4 sm:p-5 shadow-[0_0_30px_rgba(0,0,0,0.5)] grid grid-cols-2 lg:flex lg:flex-col justify-between items-center gap-3">
-            <div className="w-full text-center lg:text-left">
-              <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em] mb-0.5">PROGRESS / التقدم</div>
-              <div className="text-lg sm:text-2xl font-black text-white">
-                {currentQIndex + 1} <span className="text-xs sm:text-sm text-slate-500">/ {questions.length}</span>
-              </div>
-              {questions[currentQIndex]?.displayTitle && (
-                <div className="text-[10px] font-bold text-cyan-300 mt-1 truncate bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-lg">
-                  {questions[currentQIndex].displayTitle}
-                </div>
-              )}
+        /* Active 3D Machine Arena Screen: Focused solely on interactive device */
+        <div className="relative z-10 w-full max-w-5xl flex-1 flex flex-col gap-2.5 items-center justify-center my-auto py-1">
+          {/* Streamlined Minimal In-Game Top Bar */}
+          <div className="w-full flex items-center justify-between px-4 py-2 rounded-2xl bg-slate-950/70 border border-white/10 text-xs font-bold">
+            <div className="flex items-center gap-2 text-cyan-300">
+              <span className="text-slate-400 text-[10px] uppercase">Round:</span>
+              <span className="font-mono text-white text-sm">{currentQIndex + 1} / {questions.length}</span>
             </div>
 
-            <div className="w-full text-center lg:text-left">
-              <div className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.2em] mb-0.5">TIME / الوقت</div>
-              <div className="text-lg sm:text-2xl font-black text-amber-300 font-mono">
-                {formatMMSS(elapsedTime)}
-              </div>
+            <div className="flex items-center gap-2 text-amber-300 font-mono text-sm">
+              <span className="text-slate-400 text-[10px] uppercase font-sans">Time:</span>
+              <span>{formatMMSS(elapsedTime)}</span>
             </div>
 
-            <div className="w-full text-center lg:text-left">
-              <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em] mb-0.5">ACCURACY / الدقة</div>
-              <div className="text-lg sm:text-2xl font-black text-emerald-300">
-                %{liveAccuracyPct}
-              </div>
-            </div>
-
-            <div className="w-full text-center lg:text-left">
-              <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em] mb-0.5">SCORE / النتيجة</div>
-              <div className="text-xl sm:text-2xl font-black text-cyan-300">{score}</div>
-            </div>
-
-            <div className="w-full text-center lg:text-left col-span-2 lg:col-span-1">
-              <div className="text-[10px] font-bold text-purple-400 uppercase tracking-[0.2em] mb-0.5">COMBO / الكومبو</div>
-              <div className="text-lg sm:text-xl font-black text-purple-300">{combo}x</div>
+            <div className="flex items-center gap-2 text-emerald-400">
+              <span className="text-slate-400 text-[10px] uppercase">Score:</span>
+              <span className="font-mono text-white text-sm">{score} PTS</span>
             </div>
           </div>
 
-          {/* Center 3D Smart Boxing Machine */}
-          <div className="w-full flex-1 h-[460px] sm:h-[520px] md:h-[580px] lg:h-[640px] max-h-[78vh] rounded-2xl overflow-hidden border border-cyan-500/20">
+          {/* Center 3D Smart Boxing Machine - Maximized Space */}
+          <div className="w-full flex-1 h-[520px] sm:h-[600px] md:h-[680px] max-h-[82vh] rounded-2xl overflow-hidden border border-cyan-500/20">
             <ThreeBoxingMachine
               theme={theme}
               activeToken={activeToken}
@@ -492,7 +411,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
               onSubmitAnswer={handleSubmitAnswer}
               flashStatus={flashStatus}
               interactive={!isShowingSequence}
-              labelTitle={questions[currentQIndex]?.displayTitle || 'Mind Sport'}
+              labelTitle={questions[currentQIndex]?.displayTitle || 'Speed Digits'}
             />
           </div>
         </div>

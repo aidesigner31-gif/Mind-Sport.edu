@@ -49,34 +49,33 @@ interface ButtonPos {
   left: string;
 }
 
-// Player 1 (Left Half): Central question cell is to the right (x ~ 85%-100%, y ~ 35%-65%)
-// All numbers in the middle vertical band stay comfortably below left: 50%
+// Dedicated scattered coordinates for Player 1 (Left Half) and Player 2 (Right Half)
+// Calibrated with wide clearance (>60% center channel) so the enlarged central question circle never touches any number
 export const P1_SCATTERED_LAYOUT: ButtonPos[] = [
-  { digit: 6, top: '12%', left: '26%' }, // Top-left (well clear)
-  { digit: 7, top: '12%', left: '72%' }, // Top-right (above central cell)
-  { digit: 5, top: '34%', left: '16%' }, // Mid-upper-left
-  { digit: 9, top: '32%', left: '46%' }, // Mid-upper-center
-  { digit: 0, top: '52%', left: '14%' }, // Mid-left
-  { digit: 4, top: '52%', left: '44%' }, // Mid-center
-  { digit: 3, top: '70%', left: '26%' }, // Mid-lower-left
-  { digit: 8, top: '86%', left: '18%' }, // Bottom-left
-  { digit: 1, top: '86%', left: '46%' }, // Bottom-center
-  { digit: 2, top: '86%', left: '74%' }, // Bottom-right (below central cell)
+  { digit: 6, top: '9%', left: '22%' },  // Top-left (far above circle)
+  { digit: 7, top: '9%', left: '74%' },  // Top-right (above circle)
+  { digit: 5, top: '29%', left: '15%' }, // Mid-upper-left
+  { digit: 9, top: '29%', left: '38%' }, // Mid-upper-center (left <= 38%, well clear of center)
+  { digit: 0, top: '50%', left: '13%' }, // Mid-left
+  { digit: 4, top: '50%', left: '36%' }, // Mid-center (left <= 36%, well clear of center)
+  { digit: 3, top: '71%', left: '20%' }, // Mid-lower-left
+  { digit: 8, top: '90%', left: '15%' }, // Bottom-left
+  { digit: 1, top: '90%', left: '42%' }, // Bottom-center
+  { digit: 2, top: '90%', left: '74%' }, // Bottom-right (below circle)
 ];
 
-// Player 2 (Right Half): Central question cell is to the left (x ~ 0%-15%, y ~ 35%-65%)
-// Symmetrically mirrored so Player 2 has identical distance & fairness with zero overlap
+// Player 2 (Right Half): Symmetrically mirrored so Player 2 has identical distance & fairness with zero overlap
 export const P2_SCATTERED_LAYOUT: ButtonPos[] = [
-  { digit: 6, top: '12%', left: '74%' }, // Top-right
-  { digit: 7, top: '12%', left: '28%' }, // Top-left (above central cell)
-  { digit: 5, top: '34%', left: '84%' }, // Mid-upper-right
-  { digit: 9, top: '32%', left: '54%' }, // Mid-upper-center
-  { digit: 0, top: '52%', left: '86%' }, // Mid-right
-  { digit: 4, top: '52%', left: '56%' }, // Mid-center
-  { digit: 3, top: '70%', left: '74%' }, // Mid-lower-right
-  { digit: 8, top: '86%', left: '82%' }, // Bottom-right
-  { digit: 1, top: '86%', left: '54%' }, // Bottom-center
-  { digit: 2, top: '86%', left: '26%' }, // Bottom-left (below central cell)
+  { digit: 6, top: '9%', left: '78%' },  // Top-right (far above circle)
+  { digit: 7, top: '9%', left: '26%' },  // Top-left (above circle)
+  { digit: 5, top: '29%', left: '85%' }, // Mid-upper-right
+  { digit: 9, top: '29%', left: '62%' }, // Mid-upper-center (left >= 62%, well clear of center)
+  { digit: 0, top: '50%', left: '87%' }, // Mid-right
+  { digit: 4, top: '50%', left: '64%' }, // Mid-center (left >= 64%, well clear of center)
+  { digit: 3, top: '71%', left: '80%' }, // Mid-lower-right
+  { digit: 8, top: '90%', left: '85%' }, // Bottom-right
+  { digit: 1, top: '90%', left: '58%' }, // Bottom-center
+  { digit: 2, top: '90%', left: '26%' }, // Bottom-left (below circle)
 ];
 
 export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, adminSettings }) => {
@@ -337,12 +336,14 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
       setP1WrongCount((w) => w + 1);
       setP1Combo(0);
       setP1LastResult('wrong');
+      setP1TotalTime((t) => t + qTimeLimit);
     }
     if (!p2Submitted) {
       setP2Submitted(true);
       setP2WrongCount((w) => w + 1);
       setP2Combo(0);
       setP2LastResult('wrong');
+      setP2TotalTime((t) => t + qTimeLimit);
     }
     soundEngine.playWrongSound();
     concludeRound();
@@ -448,10 +449,52 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
     processPlayerSubmission(2, p2Digits);
   };
 
-  // Determine winner for trophy display
-  const p1Wins = p1Score > p2Score || (p1Score === p2Score && p1CorrectCount > p2CorrectCount);
-  const p2Wins = p2Score > p1Score || (p1Score === p2Score && p2CorrectCount > p1CorrectCount);
-  const isTie = p1Score === p2Score && p1CorrectCount === p2CorrectCount;
+  // ⭐ Precise Winner Determination & Tie-Breaking Criteria ⭐
+  // Criterion 1: Highest Score (العلامة / الدرجة الأعلى لتحديد الفائز الأساسي)
+  // Criterion 2: Speed / Least Time (السرعة والوقت الأقل كمعيار لحسم النتيجة عند تعادل العلامات)
+  // ⭐ Precise Winner Determination & Tie-Breaking Criteria ⭐
+  // Criterion 1: Highest Score (العلامة / الدرجة الأعلى لتحديد الفائز الأساسي)
+  // Criterion 2: Speed / Least Time (السرعة والوقت الأقل كمعيار لحسم النتيجة عند تعادل العلامات)
+  // Guarantee Trophy (الكأس الذهبي) to the faster contestant automatically upon score tie
+  const scoreDiff = Math.abs(p1Score - p2Score);
+  const timeDiff = Math.abs(p1TotalTime - p2TotalTime);
+
+  let winner: 'p1' | 'p2' = 'p1';
+  let winReason: 'score' | 'speed_tiebreaker' = 'score';
+
+  if (p1Score > p2Score) {
+    winner = 'p1';
+    winReason = 'score';
+  } else if (p2Score > p1Score) {
+    winner = 'p2';
+    winReason = 'score';
+  } else {
+    // Scores are tied! Settle by speed (least elapsed response time)
+    if (p1TotalTime < p2TotalTime) {
+      winner = 'p1';
+      winReason = 'speed_tiebreaker';
+    } else if (p2TotalTime < p1TotalTime) {
+      winner = 'p2';
+      winReason = 'speed_tiebreaker';
+    } else {
+      // Millisecond-exact tie fallback: least mistakes / accuracy
+      if (p1CorrectCount > p2CorrectCount) {
+        winner = 'p1';
+        winReason = 'score';
+      } else if (p2CorrectCount > p1CorrectCount) {
+        winner = 'p2';
+        winReason = 'score';
+      } else {
+        winner = 'p1';
+        winReason = 'speed_tiebreaker';
+      }
+    }
+  }
+
+  const p1Wins = winner === 'p1';
+  const p2Wins = winner === 'p2';
+  const isTie = false;
+  const isSpeedTiebreaker = winReason === 'speed_tiebreaker';
 
   return (
     <div className="relative min-h-screen w-full flex flex-col justify-between p-2 sm:p-4 md:p-6 select-none bg-[#070a14] text-white overflow-hidden">
@@ -473,21 +516,17 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
         <div className="text-center">
           <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-amber-400 uppercase tracking-widest">
             <Trophy className="w-3.5 h-3.5" />
-            <span>MIND SPORT ARENA • شاشة المسابقة الرسمية</span>
+            <span>Speed Digits • Competition</span>
           </div>
           <h1 className="text-lg sm:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-amber-300 to-purple-400">
             بطولة تحدي الحساب الذهني
           </h1>
         </div>
 
-        {/* Speed Indicator Badge */}
         <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-amber-400/40 text-amber-300 text-xs font-bold flex items-center gap-2 shadow">
-            <span>{speedInfo.icon}</span>
-            <span className="hidden md:inline font-bold">السرعة: {speedInfo.displayNameAr}</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-200">
-              {speedInfo.effectiveFlashMs}ms
-            </span>
+          <div className="px-3.5 py-1.5 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 shadow">
+            <Trophy className="w-4 h-4 text-amber-400" />
+            <span className="font-bold">المسابقة</span>
           </div>
         </div>
       </header>
@@ -622,16 +661,6 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
             </div>
           </div>
 
-          {/* Speed Status Alert */}
-          <div className="w-full mb-6 p-3 rounded-2xl bg-slate-900 border border-emerald-500/30 flex items-center justify-between text-right text-xs">
-            <div className="flex items-center gap-2 text-emerald-300 font-bold">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>سرعة المسابقة موحدة تلقائياً من الأدمن: {speedInfo.displayNameAr} ({speedInfo.effectiveFlashMs}ms)</span>
-            </div>
-            <span className="text-[10px] text-slate-400 font-mono hidden sm:inline">
-              وقت الإجابة: {speedInfo.timeLimitSec} ثوانٍ
-            </span>
-          </div>
 
           {/* Start Championship Button */}
           <button
@@ -644,37 +673,86 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
         </div>
       ) : isMatchOver ? (
         /* ========================================================
-            3. MATCH RESULTS & TROPHY CELEBRATION
+            3. MATCH RESULTS & TROPHY CELEBRATION (معايير فك التعادل وجوائز الكأس والميدالية)
            ======================================================== */
         <div className="relative z-10 w-full flex-1 flex flex-col justify-between max-w-7xl mx-auto py-2">
-          {/* Main Winner Stage */}
+          {/* Top Decision Header Banner */}
+          <div className="w-full mb-3 sm:mb-4 p-3.5 sm:p-4 rounded-3xl bg-slate-950/80 backdrop-blur-xl border border-amber-400/40 shadow-[0_0_35px_rgba(245,158,11,0.2)]">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.5)]">
+                  <Trophy className="w-6 h-6 fill-slate-950" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">
+                    النتيجة الرسمية لبطولة الحساب الذهني
+                  </span>
+                  <h3 className="text-lg sm:text-2xl font-black text-white">
+                    {p1Wins
+                      ? `🏆 بطل المسابقة: ${p1Name}`
+                      : p2Wins
+                      ? `🏆 بطل المسابقة: ${p2Name}`
+                      : '⚔️ تعادل بطولي مشترك بين المتسابقين'}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Criterion Decider Badge */}
+              <div className="flex items-center gap-2">
+                {isSpeedTiebreaker ? (
+                  <div className="px-3.5 py-1.5 rounded-2xl bg-amber-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-[0_0_20px_rgba(245,158,11,0.5)] animate-pulse">
+                    <Zap className="w-4 h-4 fill-slate-950" />
+                    <span>حسم الفوز بالسرعة الفائقة ⚡ (تعادل في النقاط وفارق سرعة {timeDiff.toFixed(2)} ثانية)</span>
+                  </div>
+                ) : !isTie ? (
+                  <div className="px-3.5 py-1.5 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>حسم الفوز بأعلى مجموع درجات (فارق {scoreDiff} نقطة)</span>
+                  </div>
+                ) : (
+                  <div className="px-3.5 py-1.5 rounded-2xl bg-purple-500/20 border border-purple-400/50 text-purple-300 font-bold text-xs">
+                    تعادل متطابق في النقاط والسرعة
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Side-by-Side Winner Stage (Trophy on Winner's Half, Medal on Runner-up) */}
           <div className="relative w-full flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch my-auto">
             {/* LEFT PLAYER RESULTS CARD */}
             <div
-              className={`relative rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-between text-center transition-all backdrop-blur-xl border ${
+              className={`relative rounded-3xl p-5 sm:p-7 flex flex-col items-center justify-between text-center transition-all backdrop-blur-xl border ${
                 p1Wins
-                  ? 'bg-gradient-to-b from-cyan-950/80 via-slate-900/95 to-slate-950 border-cyan-400 shadow-[0_0_60px_rgba(6,182,212,0.4)] scale-[1.02]'
-                  : 'bg-slate-950/60 border-white/10 opacity-80'
+                  ? 'bg-gradient-to-b from-cyan-950/90 via-slate-900/95 to-slate-950 border-amber-400 shadow-[0_0_60px_rgba(245,158,11,0.35)] scale-[1.01]'
+                  : 'bg-slate-950/70 border-white/10 opacity-90'
               }`}
             >
-              {p1Wins && (
-                <div className="absolute -top-4 px-4 py-1.5 rounded-full bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.6)] flex items-center gap-1.5 animate-bounce">
+              {/* Winner or Runner-up Top Pill */}
+              {p1Wins ? (
+                <div className="absolute -top-4 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center gap-1.5 animate-bounce">
                   <Trophy className="w-4 h-4 fill-slate-950" />
-                  <span>بطل المسابقة • CHAMPION!</span>
+                  <span>{isSpeedTiebreaker ? 'بطل المسابقة بحسم السرعة ⚡' : 'بطل المسابقة • المركز الأول 🏆'}</span>
+                </div>
+              ) : (
+                <div className="absolute -top-4 px-3.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-600 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow">
+                  <Medal className="w-3.5 h-3.5 text-slate-300" />
+                  <span>المركز الثاني • RUNNER UP 🥈</span>
                 </div>
               )}
 
               {/* Contestant Header */}
-              <div>
-                <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest block mb-1">
+              <div className="mt-2">
+                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest block mb-0.5">
                   المتسابق الأول
                 </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white">{p1Name}</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-white">{p1Name}</h3>
               </div>
 
-              {/* The Grand Winner Trophy (Shows on the Winner's Half as in the Video!) */}
-              <div className="my-6 flex flex-col items-center justify-center">
+              {/* Award Trophy (for Winner) OR Award Medal (for Runner-Up) */}
+              <div className="my-4 flex flex-col items-center justify-center">
                 {p1Wins ? (
+                  /* The Golden Trophy Award */
                   <div className="relative group">
                     <div className="absolute inset-0 bg-amber-400/25 blur-3xl rounded-full animate-pulse" />
                     <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 p-1 flex items-center justify-center shadow-[0_0_50px_rgba(245,158,11,0.6)]">
@@ -687,19 +765,70 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                     </div>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400">
-                    <Medal className="w-12 h-12 text-slate-400" />
+                  /* The Silver Medal Award */
+                  <div className="relative group">
+                    <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-b from-slate-300 via-slate-400 to-slate-600 p-1 flex items-center justify-center shadow-[0_0_30px_rgba(203,213,225,0.25)]">
+                      <div className="w-full h-full rounded-full bg-slate-950 flex flex-col items-center justify-center">
+                        <Medal className="w-16 h-16 sm:w-18 sm:h-18 text-slate-300 drop-shadow-[0_0_15px_rgba(203,213,225,0.4)]" />
+                        <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest mt-1">
+                          الميدالية الفضية
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
+
+                {/* Sub-banner Explaining the Award */}
+                <div className="mt-3">
+                  {p1Wins && isSpeedTiebreaker ? (
+                    <div className="px-3 py-1.5 rounded-xl bg-amber-400/20 border border-amber-400/50 text-amber-300 text-xs font-bold flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                      <span>مُنح الكأس الذهبي تلقائياً لحسم التعادل بالسرعة الأسرع!</span>
+                    </div>
+                  ) : p1Wins ? (
+                    <div className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>مُنح الكأس الذهبي لتحقيق أعلى مجموع نقاط</span>
+                    </div>
+                  ) : isSpeedTiebreaker ? (
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium">
+                      أداء متميز! تعادل في النقاط وحل وصيفاً بفارق سرعة ({timeDiff.toFixed(2)}s)
+                    </div>
+                  ) : (
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium">
+                      مُنحت الميدالية التكريمية تقديراً للأداء البطولي
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Stats Breakdown */}
-              <div className="w-full space-y-2 bg-slate-900/80 rounded-2xl p-4 border border-white/10">
+              {/* Stats Breakdown including Speed/Time */}
+              <div className="w-full space-y-2 bg-slate-900/85 rounded-2xl p-4 border border-white/10 text-right">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">مجموع النقاط:</span>
-                  <span className="text-xl font-black text-cyan-300">{p1Score} PTS</span>
+                  <span className="text-slate-400">مجموع النقاط (المعيار 1):</span>
+                  <span className="text-xl font-black text-cyan-300 font-mono">{p1Score} PTS</span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-white/5 pt-1.5">
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <Timer className="w-3.5 h-3.5 text-amber-400" />
+                    <span>إجمالي وقت الإجابة (السرعة):</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {p1TotalTime < p2TotalTime && (
+                      <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[10px] font-black border border-amber-400/30">
+                        ⚡ الأسرع
+                      </span>
+                    )}
+                    <span className="text-sm font-black text-white font-mono">{p1TotalTime.toFixed(2)} ثانية</span>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">متوسط سرعة الحل:</span>
+                  <span className="text-xs font-bold text-slate-300 font-mono">
+                    {totalRounds > 0 ? (p1TotalTime / totalRounds).toFixed(2) : 0} ثانية / سؤال
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-white/5 pt-1.5">
                   <span className="text-slate-400">الإجابات الصحيحة:</span>
                   <span className="text-sm font-bold text-emerald-400">{p1CorrectCount} / {totalRounds}</span>
                 </div>
@@ -718,30 +847,37 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
 
             {/* RIGHT PLAYER RESULTS CARD */}
             <div
-              className={`relative rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-between text-center transition-all backdrop-blur-xl border ${
+              className={`relative rounded-3xl p-5 sm:p-7 flex flex-col items-center justify-between text-center transition-all backdrop-blur-xl border ${
                 p2Wins
-                  ? 'bg-gradient-to-b from-purple-950/80 via-slate-900/95 to-slate-950 border-purple-400 shadow-[0_0_60px_rgba(168,85,247,0.4)] scale-[1.02]'
-                  : 'bg-slate-950/60 border-white/10 opacity-80'
+                  ? 'bg-gradient-to-b from-purple-950/90 via-slate-900/95 to-slate-950 border-amber-400 shadow-[0_0_60px_rgba(245,158,11,0.35)] scale-[1.01]'
+                  : 'bg-slate-950/70 border-white/10 opacity-90'
               }`}
             >
-              {p2Wins && (
-                <div className="absolute -top-4 px-4 py-1.5 rounded-full bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.6)] flex items-center gap-1.5 animate-bounce">
+              {/* Winner or Runner-up Top Pill */}
+              {p2Wins ? (
+                <div className="absolute -top-4 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-xs uppercase tracking-widest shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center gap-1.5 animate-bounce">
                   <Trophy className="w-4 h-4 fill-slate-950" />
-                  <span>بطل المسابقة • CHAMPION!</span>
+                  <span>{isSpeedTiebreaker ? 'بطل المسابقة بحسم السرعة ⚡' : 'بطل المسابقة • المركز الأول 🏆'}</span>
+                </div>
+              ) : (
+                <div className="absolute -top-4 px-3.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-600 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow">
+                  <Medal className="w-3.5 h-3.5 text-slate-300" />
+                  <span>المركز الثاني • RUNNER UP 🥈</span>
                 </div>
               )}
 
               {/* Contestant Header */}
-              <div>
-                <span className="text-xs font-bold text-purple-400 uppercase tracking-widest block mb-1">
+              <div className="mt-2">
+                <span className="text-[11px] font-bold text-purple-400 uppercase tracking-widest block mb-0.5">
                   {playMode === 'vs-bot' ? 'المنافس الآلي' : 'المتسابق الثاني'}
                 </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white">{p2Name}</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-white">{p2Name}</h3>
               </div>
 
-              {/* The Grand Winner Trophy (Shows on the Winner's Half as in the Video!) */}
-              <div className="my-6 flex flex-col items-center justify-center">
+              {/* Award Trophy (for Winner) OR Award Medal (for Runner-Up) */}
+              <div className="my-4 flex flex-col items-center justify-center">
                 {p2Wins ? (
+                  /* The Golden Trophy Award */
                   <div className="relative group">
                     <div className="absolute inset-0 bg-amber-400/25 blur-3xl rounded-full animate-pulse" />
                     <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 p-1 flex items-center justify-center shadow-[0_0_50px_rgba(245,158,11,0.6)]">
@@ -754,19 +890,70 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                     </div>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400">
-                    <Medal className="w-12 h-12 text-slate-400" />
+                  /* The Silver Medal Award */
+                  <div className="relative group">
+                    <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-b from-slate-300 via-slate-400 to-slate-600 p-1 flex items-center justify-center shadow-[0_0_30px_rgba(203,213,225,0.25)]">
+                      <div className="w-full h-full rounded-full bg-slate-950 flex flex-col items-center justify-center">
+                        <Medal className="w-16 h-16 sm:w-18 sm:h-18 text-slate-300 drop-shadow-[0_0_15px_rgba(203,213,225,0.4)]" />
+                        <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest mt-1">
+                          الميدالية الفضية
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
+
+                {/* Sub-banner Explaining the Award */}
+                <div className="mt-3">
+                  {p2Wins && isSpeedTiebreaker ? (
+                    <div className="px-3 py-1.5 rounded-xl bg-amber-400/20 border border-amber-400/50 text-amber-300 text-xs font-bold flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                      <span>مُنح الكأس الذهبي تلقائياً لحسم التعادل بالسرعة الأسرع!</span>
+                    </div>
+                  ) : p2Wins ? (
+                    <div className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>مُنح الكأس الذهبي لتحقيق أعلى مجموع نقاط</span>
+                    </div>
+                  ) : isSpeedTiebreaker ? (
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium">
+                      أداء متميز! تعادل في النقاط وحل وصيفاً بفارق سرعة ({timeDiff.toFixed(2)}s)
+                    </div>
+                  ) : (
+                    <div className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium">
+                      مُنحت الميدالية التكريمية تقديراً للأداء البطولي
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Stats Breakdown */}
-              <div className="w-full space-y-2 bg-slate-900/80 rounded-2xl p-4 border border-white/10">
+              {/* Stats Breakdown including Speed/Time */}
+              <div className="w-full space-y-2 bg-slate-900/85 rounded-2xl p-4 border border-white/10 text-right">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">مجموع النقاط:</span>
-                  <span className="text-xl font-black text-purple-300">{p2Score} PTS</span>
+                  <span className="text-slate-400">مجموع النقاط (المعيار 1):</span>
+                  <span className="text-xl font-black text-purple-300 font-mono">{p2Score} PTS</span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-white/5 pt-1.5">
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <Timer className="w-3.5 h-3.5 text-amber-400" />
+                    <span>إجمالي وقت الإجابة (السرعة):</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {p2TotalTime < p1TotalTime && (
+                      <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[10px] font-black border border-amber-400/30">
+                        ⚡ الأسرع
+                      </span>
+                    )}
+                    <span className="text-sm font-black text-white font-mono">{p2TotalTime.toFixed(2)} ثانية</span>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">متوسط سرعة الحل:</span>
+                  <span className="text-xs font-bold text-slate-300 font-mono">
+                    {totalRounds > 0 ? (p2TotalTime / totalRounds).toFixed(2) : 0} ثانية / سؤال
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-white/5 pt-1.5">
                   <span className="text-slate-400">الإجابات الصحيحة:</span>
                   <span className="text-sm font-bold text-emerald-400">{p2CorrectCount} / {totalRounds}</span>
                 </div>
@@ -835,34 +1022,34 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
           </div>
 
           {/* THE WHITEBOARD COMPETITION SURFACE (Splits in 2 with Central Question Cell) */}
-          <div className="relative w-full flex-1 min-h-[500px] sm:min-h-[560px] md:min-h-[620px] rounded-3xl bg-gradient-to-b from-[#0b1022] via-[#090d1c] to-[#060914] border-2 border-slate-700/60 shadow-[0_0_50px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col">
+          <div className="relative w-full flex-1 min-h-[540px] sm:min-h-[600px] md:min-h-[660px] lg:min-h-[720px] rounded-3xl bg-gradient-to-b from-[#0b1022] via-[#090d1c] to-[#060914] border-2 border-slate-700/60 shadow-[0_0_50px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col">
             {/* Whiteboard Perimeter Frame (like the red marker frame in the video) */}
             <div className="absolute inset-0 border-4 border-rose-500/20 rounded-3xl pointer-events-none z-10" />
 
             {/* Central Dividing Line (as drawn by the teacher in the video) */}
             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1.5 bg-gradient-to-b from-cyan-500/30 via-slate-600/60 to-purple-500/30 z-0 pointer-events-none" />
 
-            {/* ⭐ THE CENTRAL QUESTION CIRCLE / CELL (دائرة السؤال في المنتصف بحجم متناسق ومدروس) ⭐ */}
+            {/* ⭐ THE ENLARGED CENTRAL QUESTION CIRCLE / CELL (دائرة السؤال الكبرى في المنتصف بتصميم بارز وواضح) ⭐ */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center pointer-events-none select-none">
               {/* Central Glowing Cell */}
               <div
-                className={`relative w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full flex flex-col items-center justify-center p-1.5 transition-all duration-300 shadow-[0_0_40px_rgba(0,0,0,0.9)] ${
+                className={`relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 lg:w-60 lg:h-60 rounded-full flex flex-col items-center justify-center p-2 sm:p-2.5 transition-all duration-300 shadow-[0_0_50px_rgba(0,0,0,0.95)] ${
                   isShowingSeq
-                    ? 'bg-gradient-to-tr from-cyan-950 via-slate-900 to-purple-950 border-3 sm:border-4 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.5)] scale-105'
+                    ? 'bg-gradient-to-tr from-cyan-950 via-slate-900 to-purple-950 border-4 sm:border-5 border-amber-400 shadow-[0_0_45px_rgba(245,158,11,0.6)] scale-105'
                     : roundRevealed
-                    ? 'bg-gradient-to-tr from-emerald-950 via-slate-900 to-emerald-900 border-3 sm:border-4 border-emerald-400 shadow-[0_0_35px_rgba(16,185,129,0.5)]'
-                    : 'bg-slate-950/95 border-3 sm:border-4 border-cyan-400/80 shadow-[0_0_30px_rgba(6,182,212,0.3)]'
+                    ? 'bg-gradient-to-tr from-emerald-950 via-slate-900 to-emerald-900 border-4 sm:border-5 border-emerald-400 shadow-[0_0_45px_rgba(16,185,129,0.6)]'
+                    : 'bg-slate-950/95 border-4 sm:border-5 border-cyan-400/80 shadow-[0_0_40px_rgba(6,182,212,0.4)]'
                 }`}
               >
-                {/* Secondary inner ring */}
-                <div className="w-full h-full rounded-full border border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden bg-radial from-slate-800/50 to-slate-950">
+                {/* Secondary inner ring with ambient depth */}
+                <div className="w-full h-full rounded-full border-2 border-dashed border-white/25 flex flex-col items-center justify-center relative overflow-hidden bg-radial from-slate-800/60 to-slate-950 shadow-inner">
                   {/* Flashing content */}
                   {isShowingSeq ? (
                     <div className="flex flex-col items-center justify-center animate-pulse">
-                      <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">
+                      <span className="text-[10px] sm:text-xs font-bold text-amber-400 uppercase tracking-widest mb-1">
                         انتبه للرقم!
                       </span>
-                      <span className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_20px_rgba(245,158,11,0.9)]">
+                      <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_25px_rgba(245,158,11,0.9)]">
                         {activeToken ? (
                           activeToken.value.startsWith('-')
                             ? activeToken.value
@@ -874,24 +1061,24 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                     </div>
                   ) : roundRevealed ? (
                     <div className="flex flex-col items-center justify-center animate-bounce">
-                      <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">
                         الإجابة الصحيحة
                       </span>
-                      <span className="text-2xl sm:text-3xl md:text-4xl font-black font-mono text-emerald-300 drop-shadow-[0_0_20px_rgba(16,185,129,0.9)]">
+                      <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black font-mono text-emerald-300 drop-shadow-[0_0_25px_rgba(16,185,129,0.9)]">
                         = {questions[currentRound]?.answer}
                       </span>
                     </div>
                   ) : (
                     /* Answer Phase / Countdown */
                     <div className="flex flex-col items-center justify-center text-center">
-                      <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest mb-0.5 flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-amber-400 animate-spin" />
+                      <span className="text-[10px] sm:text-xs font-bold text-cyan-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-spin" />
                         احسب وانقر!
                       </span>
-                      <span className="text-2xl sm:text-3xl md:text-4xl font-black font-mono text-white">
+                      <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black font-mono text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                         {roundTimeRemaining.toFixed(1)}s
                       </span>
-                      <div className="w-16 sm:w-20 bg-slate-800 h-1 rounded-full overflow-hidden mt-1">
+                      <div className="w-20 sm:w-28 md:w-32 bg-slate-800 h-1.5 sm:h-2 rounded-full overflow-hidden mt-1.5">
                         <div
                           className="h-full bg-gradient-to-r from-amber-400 to-rose-500 transition-all duration-100"
                           style={{ width: `${(roundTimeRemaining / qTimeLimit) * 100}%` }}
@@ -903,8 +1090,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
               </div>
 
               {/* Central Title Tag */}
-              <div className="mt-1 px-2.5 py-0.5 rounded-full bg-slate-900/95 border border-white/20 text-[8px] sm:text-[9px] font-bold text-slate-300 shadow">
-                {isShowingSeq ? 'وميض السؤال' : roundRevealed ? 'نتيجة الجولة' : 'الإجابة السريعة'}
+              <div className="mt-2 px-3 py-0.5 rounded-full bg-slate-900/95 border border-white/20 text-[9px] sm:text-[10px] font-bold text-slate-300 shadow">
+                {isShowingSeq ? 'وميض السؤال' : roundRevealed ? 'نتيجة الجولة' : 'طور الإجابة السريعة'}
               </div>
             </div>
 

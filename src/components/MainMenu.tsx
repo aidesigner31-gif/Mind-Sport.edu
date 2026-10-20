@@ -66,16 +66,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     <div className="relative min-h-screen w-full flex flex-col items-center justify-between p-4 md:p-6 select-none">
       {/* Top Header Bar / HUD with Admin Control and Logout at top */}
       <header className="relative z-10 w-full max-w-7xl flex items-center justify-between pt-2 pb-4 border-b border-white/10">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2.5 h-2.5 bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.9)] rounded-sm" />
-            <span className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-70 text-pink-400">
-              System Online • Mind Sport Arena
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-400 to-purple-500 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]">
-            MIND SPORT
-          </h1>
+        <div className="flex items-center gap-2.5">
+          <div className="w-3 h-3 bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.9)] rounded-sm" />
+          <span className="text-base sm:text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-400 to-purple-400">
+            Speed Digits
+          </span>
         </div>
 
         <div className="flex items-center gap-2.5 sm:gap-3">
@@ -84,12 +79,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             {userRole === 'admin' ? (
               <>
                 <ShieldCheck className="w-3.5 h-3.5 text-pink-400" />
-                <span className="text-pink-300">أدمن (Admin)</span>
+                <span className="text-pink-300">Admin</span>
               </>
             ) : (
               <>
                 <GraduationCap className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-cyan-300">طالب (Student)</span>
+                <span className="text-cyan-300">Student</span>
               </>
             )}
           </div>
@@ -103,7 +98,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <span>Admin Control</span>
             {userRole !== 'admin' && <Lock className="w-3.5 h-3.5 text-pink-400/70 ml-0.5" />}
           </button>
-
 
           <button
             onClick={() => {
@@ -123,138 +117,67 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 soundEngine.playTargetActivate();
                 onLogout();
               }}
-              title="تسجيل الخروج / Logout"
+              title="Logout"
               className="px-3 py-2 sm:py-2.5 rounded-2xl bg-white/5 hover:bg-rose-500/20 backdrop-blur-md border border-white/10 hover:border-rose-400/50 transition-all text-slate-400 hover:text-rose-300 flex items-center gap-1.5 cursor-pointer shadow"
             >
               <LogOut className="w-4 h-4" />
-              <span className="text-xs font-bold hidden md:inline">خروج</span>
+              <span className="text-xs font-bold hidden md:inline">Logout</span>
             </button>
           )}
         </div>
       </header>
 
-      {/* Main Hero & Glass Navigation Grid */}
-      <main className="relative z-10 my-auto text-center max-w-5xl w-full flex flex-col items-center py-4 sm:py-8">
-        {/* Holographic Eyebrow Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-pink-500/10 backdrop-blur-md border border-pink-400/30 text-pink-300 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mb-3 sm:mb-4 shadow-[0_0_20px_rgba(236,72,153,0.25)]">
-          <Sparkles className="w-3.5 h-3.5 text-pink-400 animate-spin" />
-          SPEEDDIGITS MENTAL ARITHMETIC SYSTEM
-        </div>
+      {/* Main Hero & Navigation Grid */}
+      <main className="relative z-10 my-auto text-center max-w-5xl w-full flex flex-col items-center py-6 sm:py-10">
+        <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-300 to-purple-400 mb-8 sm:mb-12 drop-shadow-[0_0_35px_rgba(236,72,153,0.4)]">
+          Speed Digits
+        </h1>
 
-        <h2 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-300 to-purple-400 mb-2 sm:mb-3 drop-shadow-[0_0_35px_rgba(236,72,153,0.4)]">
-          SPEEDDIGITS
-        </h2>
-        <p className="text-slate-300 text-xs sm:text-sm md:text-base max-w-2xl font-normal leading-relaxed mb-4 opacity-85">
-          Process mental arithmetic equations at high velocity and punch illuminated LED pads.
-        </p>
-
-        {/* Unified Admin Speed Readout Banner */}
-        {speedInfo && (
-          <div className="mb-6 px-4 py-3 rounded-2xl bg-slate-950/85 border border-emerald-500/40 backdrop-blur-md shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col items-center justify-center gap-2.5 text-xs max-w-2xl w-full">
-            <div className="flex flex-wrap items-center justify-between gap-2 w-full border-b border-white/10 pb-2">
-              <div className="flex items-center gap-2 text-emerald-400 font-black">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                <span>السرعة الموحدة الحالية لجميع الأجهزة:</span>
-              </div>
-
-              {/* Action button on banner */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleRefreshSpeed}
-                  disabled={isRefreshingSpeed}
-                  className="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shadow-sm"
-                  title="مزامنة فورية وتحديث السرعة من السحابة"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingSpeed ? 'animate-spin text-cyan-200' : ''}`} />
-                  <span>{isRefreshingSpeed ? 'جاري الفحص...' : refreshSuccess ? '✓ تم التحديث' : 'مزامنة فورية'}</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
-              <div className="flex items-center gap-2 font-mono font-black text-white bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/15 shadow-inner text-xs sm:text-sm">
-                <span>{speedInfo.icon} {speedInfo.displayNameAr}</span>
-                <span className="text-slate-400">•</span>
-                <span className="text-cyan-300 font-bold">وميض: {speedInfo.effectiveFlashMs}ms ({(speedInfo.effectiveFlashMs / 1000).toFixed(2)}s)</span>
-                <span className="text-slate-400">•</span>
-                <span className="text-purple-300 font-bold">إجابة: {speedInfo.timeLimitSec}s</span>
-              </div>
-
-              <div className="text-[10px] text-emerald-300/90 font-medium flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>مضبوطة مركزياً من الأدمن وموحدة على كافة الأجهزة</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Primary Menu Navigation Glass Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full">
+        {/* Primary Menu Navigation Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 w-full">
           {/* Single Player Card */}
           <button
             onClick={() => {
               soundEngine.playTargetActivate();
               onSelectMode('single-player');
             }}
-            className="group relative p-5 sm:p-6 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 hover:border-cyan-400/60 hover:bg-white/10 transition-all duration-300 text-left flex flex-col justify-between overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_35px_rgba(34,211,238,0.25)] hover:-translate-y-1 cursor-pointer"
+            className="group relative p-8 sm:p-10 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 hover:border-cyan-400/60 hover:bg-white/10 transition-all duration-300 flex flex-col items-center justify-center text-center overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_35px_rgba(34,211,238,0.25)] hover:-translate-y-1 cursor-pointer min-h-[200px]"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/10 rounded-full blur-2xl group-hover:bg-cyan-400/20 transition-all" />
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-cyan-400/15 text-cyan-300 border border-cyan-400/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(34,211,238,0.2)]">
-              <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-cyan-300" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-cyan-400/15 text-cyan-300 border border-cyan-400/30 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+              <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-cyan-300" />
             </div>
-            <div>
-              <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.25em] mb-1 opacity-90">PRO TRAINING</div>
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">Single Player</h3>
-              <p className="text-[11px] sm:text-xs text-slate-300/80 leading-relaxed">
-                Practice, Career progression & Level 0–6 Easy & Complex training modes.
-              </p>
-            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-white">Single Player</h3>
           </button>
 
-          {/* Two Player Split Screen Card */}
+          {/* Two Players Card */}
           <button
             onClick={() => {
               soundEngine.playTargetActivate();
               onSelectMode('two-player');
             }}
-            className="group relative p-5 sm:p-6 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 hover:border-purple-400/60 hover:bg-white/10 transition-all duration-300 text-left flex flex-col justify-between overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_35px_rgba(168,85,247,0.25)] hover:-translate-y-1 cursor-pointer"
+            className="group relative p-8 sm:p-10 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 hover:border-purple-400/60 hover:bg-white/10 transition-all duration-300 flex flex-col items-center justify-center text-center overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_35px_rgba(168,85,247,0.25)] hover:-translate-y-1 cursor-pointer min-h-[200px]"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all" />
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-purple-500/15 text-purple-300 border border-purple-400/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(168,85,247,0.2)]">
-              <Users className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-purple-500/15 text-purple-300 border border-purple-400/30 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+              <Users className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
-            <div>
-              <div className="text-[10px] font-bold text-purple-400 uppercase tracking-[0.25em] mb-1 opacity-90">DUAL MACHINE • لاعبان</div>
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">تحدي اللاعبين (Two Players)</h3>
-              <p className="text-[11px] sm:text-xs text-slate-300/80 leading-relaxed">
-                مواجهة ثنائية حية بجهازين ثلاثيي الأبعاد وسرعة وميض موحدة من الأدمن.
-              </p>
-            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-white">Two Players</h3>
           </button>
 
-          {/* Competition Mode Card */}
+          {/* Competition Card */}
           <button
             onClick={() => {
               soundEngine.playTargetActivate();
               onSelectMode('competition');
             }}
-            className="group relative p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-white/5 to-purple-500/10 backdrop-blur-xl border border-amber-400/40 hover:border-amber-400 hover:bg-white/10 transition-all duration-300 text-left flex flex-col justify-between overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_35px_rgba(245,158,11,0.35)] hover:-translate-y-1 cursor-pointer"
+            className="group relative p-8 sm:p-10 rounded-3xl bg-white/5 backdrop-blur-xl border border-amber-400/40 hover:border-amber-400 hover:bg-white/10 transition-all duration-300 flex flex-col items-center justify-center text-center overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_35px_rgba(245,158,11,0.35)] hover:-translate-y-1 cursor-pointer min-h-[200px]"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 rounded-full blur-2xl group-hover:bg-amber-500/25 transition-all" />
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-              <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+              <Trophy className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
-            <div>
-              <div className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.25em] mb-1 opacity-90">CHAMPIONSHIP • شاشة المسابقة</div>
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5">المسابقة (Competition) 🏆</h3>
-              <p className="text-[11px] sm:text-xs text-slate-300/90 leading-relaxed">
-                واجهة المسابقة للسبورات الذكية: دائرة السؤال بالمنتصف، أرقام مبعثرة متطابقة، وكأس البطولة للفائز!
-              </p>
-            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-white">Competition</h3>
           </button>
         </div>
       </main>

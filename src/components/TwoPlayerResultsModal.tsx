@@ -67,7 +67,6 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
 }) => {
   const [showHistory, setShowHistory] = useState<boolean>(false);
 
-  const winner = p1Score > p2Score ? 'p1' : p2Score > p1Score ? 'p2' : 'tie';
   const scoreDiff = Math.abs(p1Score - p2Score);
 
   const matchSec =
@@ -76,6 +75,40 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
       : parseFloat(String(matchTimeSeconds)) || 0;
   const realP1Time = p1TimeSeconds && p1TimeSeconds > 0 ? p1TimeSeconds : matchSec;
   const realP2Time = p2TimeSeconds && p2TimeSeconds > 0 ? p2TimeSeconds : matchSec;
+  const timeDiff = Math.abs(realP1Time - realP2Time).toFixed(2);
+
+  // ⭐ Precise Winner Determination & Tie-Breaking Criteria ⭐
+  // Criterion 1: Highest Score (العلامة / الدرجة الأعلى لتحديد الفائز الأساسي)
+  // Criterion 2: Speed / Least Time (السرعة والوقت الأقل لحسم النتيجة عند تعادل العلامات)
+  // Guarantee Trophy (الكأس الذهبي) to the faster contestant automatically upon score tie
+  let winner: 'p1' | 'p2' = 'p1';
+  let isSpeedTiebreaker = false;
+
+  if (p1Score > p2Score) {
+    winner = 'p1';
+  } else if (p2Score > p1Score) {
+    winner = 'p2';
+  } else {
+    // Scores are tied! Settle by speed (least elapsed response time)
+    if (realP1Time < realP2Time) {
+      winner = 'p1';
+      isSpeedTiebreaker = true;
+    } else if (realP2Time < realP1Time) {
+      winner = 'p2';
+      isSpeedTiebreaker = true;
+    } else {
+      // Millisecond-exact tie: break by accuracy / least mistakes
+      if (p1Correct > p2Correct) {
+        winner = 'p1';
+      } else if (p2Correct > p1Correct) {
+        winner = 'p2';
+      } else {
+        // Fallback default: faster reaction
+        winner = 'p1';
+        isSpeedTiebreaker = true;
+      }
+    }
+  }
 
   const p1TotalAtt = p1Correct + p1Wrong;
   const p2TotalAtt = p2Correct + p2Wrong;
@@ -103,9 +136,8 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
     )
   );
 
-  const timeDiff = Math.abs(realP1Time - realP2Time).toFixed(1);
-  const p1IsFaster = realP1Time < realP2Time && Math.abs(realP1Time - realP2Time) >= 0.2;
-  const p2IsFaster = realP2Time < realP1Time && Math.abs(realP1Time - realP2Time) >= 0.2;
+  const p1IsFaster = realP1Time < realP2Time;
+  const p2IsFaster = realP2Time < realP1Time;
 
   // Sound & Celebratory Confetti on match conclusion
   useEffect(() => {
@@ -160,18 +192,7 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
 
         {/* 🏆 GRAND WINNER PODIUM HEADER BANNER 🏆 */}
         <div className="relative z-10 w-full mb-6">
-          {winner === 'tie' ? (
-            <div className="w-full py-4 px-6 rounded-3xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-cyan-500/20 border-2 border-amber-400/60 shadow-[0_0_35px_rgba(251,191,36,0.3)] flex flex-col items-center justify-center gap-1.5 animate-in zoom-in-95 duration-500">
-              <div className="flex items-center gap-2 text-amber-300 font-black text-xl sm:text-2xl uppercase tracking-wider">
-                <Sparkles className="w-6 h-6 text-amber-400 animate-spin" />
-                <span>⚔️ تعادل بطولي مشترك بين اللاعبين! / EPIC TIE! ⚔️</span>
-                <Sparkles className="w-6 h-6 text-amber-400 animate-spin" />
-              </div>
-              <p className="text-xs sm:text-sm text-slate-300 font-medium">
-                كلا اللاعبين أحرزا نفس المجموع ({p1Score} نقطة) وقدموا أداءً أسطورياً متكافئاً!
-              </p>
-            </div>
-          ) : winner === 'p1' ? (
+          {winner === 'p1' ? (
             <div className="w-full py-4 sm:py-5 px-6 rounded-3xl bg-gradient-to-r from-cyan-950/80 via-cyan-900/60 to-slate-950 border-2 border-cyan-400 shadow-[0_0_45px_rgba(0,240,255,0.45)] ring-4 ring-cyan-400/30 flex flex-col items-center justify-center gap-2 animate-in zoom-in-95 duration-500">
               <div className="flex items-center gap-2.5 text-cyan-300 font-black text-xl sm:text-3xl uppercase tracking-wider drop-shadow-[0_0_15px_rgba(0,240,255,0.8)]">
                 <Crown className="w-8 h-8 text-amber-400 fill-amber-400 animate-bounce" />
@@ -179,10 +200,17 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
                 <Trophy className="w-7 h-7 text-amber-400 fill-amber-400" />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm font-bold text-cyan-100">
-                <span className="px-3 py-1 rounded-full bg-cyan-400/20 border border-cyan-400/40 font-mono">
-                  فارق النقاط: <strong className="text-white text-base">+{scoreDiff}</strong> نقطة
-                </span>
-                {p1IsFaster && (
+                {isSpeedTiebreaker ? (
+                  <span className="px-3.5 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-xs shadow-[0_0_20px_rgba(245,158,11,0.5)] animate-pulse flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 fill-slate-950" />
+                    <span>حسم الفوز بالسرعة الفائقة ⚡ (تعادل في النقاط {p1Score} - {p2Score}، وفارق سرعة {timeDiff} ثانية)</span>
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full bg-cyan-400/20 border border-cyan-400/40 font-mono">
+                    فارق النقاط: <strong className="text-white text-base">+{scoreDiff}</strong> نقطة
+                  </span>
+                )}
+                {p1IsFaster && !isSpeedTiebreaker && (
                   <span className="px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 font-mono">
                     ⚡ أسرع بـ <strong className="text-white text-base">{timeDiff}</strong> ثانية
                   </span>
@@ -200,10 +228,17 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
                 <Trophy className="w-7 h-7 text-amber-400 fill-amber-400" />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm font-bold text-purple-100">
-                <span className="px-3 py-1 rounded-full bg-purple-400/20 border border-purple-400/40 font-mono">
-                  فارق النقاط: <strong className="text-white text-base">+{scoreDiff}</strong> نقطة
-                </span>
-                {p2IsFaster && (
+                {isSpeedTiebreaker ? (
+                  <span className="px-3.5 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-xs shadow-[0_0_20px_rgba(245,158,11,0.5)] animate-pulse flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 fill-slate-950" />
+                    <span>حسم الفوز بالسرعة الفائقة ⚡ (تعادل في النقاط {p1Score} - {p2Score}، وفارق سرعة {timeDiff} ثانية)</span>
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full bg-purple-400/20 border border-purple-400/40 font-mono">
+                    فارق النقاط: <strong className="text-white text-base">+{scoreDiff}</strong> نقطة
+                  </span>
+                )}
+                {p2IsFaster && !isSpeedTiebreaker && (
                   <span className="px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 font-mono">
                     ⚡ أسرع بـ <strong className="text-white text-base">{timeDiff}</strong> ثانية
                   </span>
@@ -233,17 +268,13 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
             <div className="mb-3">
               {winner === 'p1' ? (
                 <div className="w-full py-2 px-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(251,191,36,0.6)]">
-                  <Crown className="w-4 h-4 fill-slate-950 text-slate-950" />
-                  <span>👑 الفائز بالمركز الأول (CHAMPION - 1st PLACE)</span>
-                </div>
-              ) : winner === 'p2' ? (
-                <div className="w-full py-1.5 px-3 rounded-2xl bg-slate-800/80 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-white/10">
-                  <Medal className="w-3.5 h-3.5 text-slate-400" />
-                  <span>المركز الثاني (RUNNER-UP - 2nd PLACE)</span>
+                  <Trophy className="w-4 h-4 fill-slate-950 text-slate-950" />
+                  <span>🏆 المركز الأول - الفائز بالكأس الذهبي</span>
                 </div>
               ) : (
-                <div className="w-full py-1.5 px-3 rounded-2xl bg-amber-500/20 text-amber-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-amber-400/30">
-                  <span>تعادل متكافئ (CO-CHAMPION)</span>
+                <div className="w-full py-1.5 px-3 rounded-2xl bg-slate-800/80 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-white/10">
+                  <Medal className="w-3.5 h-3.5 text-slate-400" />
+                  <span>🥈 المركز الثاني - الميدالية الفضية</span>
                 </div>
               )}
             </div>
@@ -320,17 +351,13 @@ export const TwoPlayerResultsModal: React.FC<TwoPlayerResultsModalProps> = ({
             <div className="mb-3">
               {winner === 'p2' ? (
                 <div className="w-full py-2 px-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(251,191,36,0.6)]">
-                  <Crown className="w-4 h-4 fill-slate-950 text-slate-950" />
-                  <span>👑 الفائز بالمركز الأول (CHAMPION - 1st PLACE)</span>
-                </div>
-              ) : winner === 'p1' ? (
-                <div className="w-full py-1.5 px-3 rounded-2xl bg-slate-800/80 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-white/10">
-                  <Medal className="w-3.5 h-3.5 text-slate-400" />
-                  <span>المركز الثاني (RUNNER-UP - 2nd PLACE)</span>
+                  <Trophy className="w-4 h-4 fill-slate-950 text-slate-950" />
+                  <span>🏆 المركز الأول - الفائز بالكأس الذهبي</span>
                 </div>
               ) : (
-                <div className="w-full py-1.5 px-3 rounded-2xl bg-amber-500/20 text-amber-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-amber-400/30">
-                  <span>تعادل متكافئ (CO-CHAMPION)</span>
+                <div className="w-full py-1.5 px-3 rounded-2xl bg-slate-800/80 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-white/10">
+                  <Medal className="w-3.5 h-3.5 text-slate-400" />
+                  <span>🥈 المركز الثاني - الميدالية الفضية</span>
                 </div>
               )}
             </div>
