@@ -543,10 +543,10 @@ export const ThreeBoxingMachine: React.FC<ThreeBoxingMachineProps> = ({
 
           // Header Title
           const headerTitle = activeToken && activeToken.value !== '+'
-            ? 'SPEED DIGIT'
+            ? 'MIND SPORT'
             : isSubmitted
             ? 'STATUS'
-            : 'SPEED DIGIT';
+            : 'MIND SPORT';
 
           // Color & Styling Scheme
           let boxBorder = 'border-cyan-400 text-cyan-200 shadow-[0_0_18px_rgba(0,240,255,0.4)]';
@@ -572,12 +572,12 @@ export const ThreeBoxingMachine: React.FC<ThreeBoxingMachineProps> = ({
 
           return (
             <div className="flex flex-col items-center">
-              {/* Header Label with compact height matching Speed Digit */}
+              {/* Header Label with compact height matching Mind Sport */}
               <div className="text-[8px] sm:text-[9px] uppercase tracking-[0.18em] text-cyan-400 font-black mb-1 drop-shadow-[0_0_6px_#00f0ff] h-3 flex items-center justify-center whitespace-nowrap">
                 {headerTitle}
               </div>
 
-              {/* Exact Fixed Shape & Compact Size Speed Digit Rectangle Screen */}
+              {/* Exact Fixed Shape & Compact Size Mind Sport Rectangle Screen */}
               <div
                 className={`relative w-[78px] sm:w-[92px] h-[34px] sm:h-[40px] rounded-lg bg-slate-950/95 border-[1.5px] ${boxBorder} backdrop-blur-2xl font-black text-lg sm:text-2xl tracking-tight flex items-center justify-center select-none transition-colors duration-150`}
               >

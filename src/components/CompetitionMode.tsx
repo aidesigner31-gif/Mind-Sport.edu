@@ -89,10 +89,11 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
   const [isMatchOver, setIsMatchOver] = useState<boolean>(false);
 
-  // Play mode: 'two-students' or 'vs-bot'
-  const [playMode, setPlayMode] = useState<'two-students' | 'vs-bot'>('two-students');
+  // Play mode: 'two-students' or 'vs-bot' (Defaults to vs-bot for instant solo play against AI)
+  const [playMode, setPlayMode] = useState<'two-students' | 'vs-bot'>('vs-bot');
   const [p1Name, setP1Name] = useState<string>('المتسابق 1');
-  const [p2Name, setP2Name] = useState<string>('المتسابق 2');
+  const [p2Name, setP2Name] = useState<string>('روبوت الحساب السريع 🤖');
+  const [isBotThinking, setIsBotThinking] = useState<boolean>(false);
   const [totalRounds, setTotalRounds] = useState<number>(5);
   const [selectedLevel, setSelectedLevel] = useState<number>(activeAdminSettings.targetLevel ?? 1);
   const [isComplex, setIsComplex] = useState<boolean>(activeAdminSettings.isComplexMode ?? false);
@@ -129,11 +130,34 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   // Match history
   const [matchHistory, setMatchHistory] = useState<RoundHistory[]>([]);
 
-  // Refs
+  // Refs for rock-solid closure safety and timer synchronization
   const seqIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const roundStartTimestampRef = useRef<number>(0);
   const botTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const advanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Synchronous state refs to prevent stale closures and freezing
+  const playModeRef = useRef<'two-students' | 'vs-bot'>('vs-bot');
+  const p1SubmittedRef = useRef<boolean>(false);
+  const p2SubmittedRef = useRef<boolean>(false);
+  const roundRevealedRef = useRef<boolean>(false);
+  const currentRoundRef = useRef<number>(0);
+  const questionsRef = useRef<Question[]>([]);
+  const p1DigitsRef = useRef<string>('');
+  const p2DigitsRef = useRef<string>('');
+
+  useEffect(() => {
+    playModeRef.current = playMode;
+  }, [playMode]);
+
+  useEffect(() => {
+    currentRoundRef.current = currentRound;
+  }, [currentRound]);
+
+  useEffect(() => {
+    questionsRef.current = questions;
+  }, [questions]);
 
   // Total elapsed timer
   useEffect(() => {
@@ -143,6 +167,16 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
     }, 1000);
     return () => clearInterval(interval);
   }, [isLive, isCountdownActive, isMatchOver]);
+
+  // Clean up all active intervals and timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+      if (botTimeoutRef.current) clearTimeout(botTimeoutRef.current);
+      if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+    };
+  }, []);
 
   // Format MM:SS
   const formatMMSS = (sec: number): string => {
@@ -155,7 +189,16 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   const startChampionship = () => {
     const qList = fetchQuestionsForLevel(selectedLevel, isComplex, totalRounds);
     setQuestions(qList);
+    questionsRef.current = qList;
+    currentRoundRef.current = 0;
     setCurrentRound(0);
+
+    // Reset synchronous refs
+    p1SubmittedRef.current = false;
+    p2SubmittedRef.current = false;
+    roundRevealedRef.current = false;
+    p1DigitsRef.current = '';
+    p2DigitsRef.current = '';
 
     // Reset scores & stats
     setP1Score(0);
@@ -184,17 +227,64 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
     setIsCountdownActive(true);
   };
 
-  // Trigger flash sequence for current question
-  useEffect(() => {
-    if (!isLive || isCountdownActive || isMatchOver || questions.length === 0 || currentRound >= questions.length) {
-      return;
+  // Advance immediately to next round or finish championship
+  const advanceToNextRound = () => {
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
+    const totalQ = questionsRef.current.length > 0 ? questionsRef.current.length : questions.length;
+    const nextIdx = currentRoundRef.current + 1;
+
+    if (nextIdx < totalQ) {
+      startNewRound(nextIdx);
+    } else {
+      // Championship Finish!
+      setIsMatchOver(true);
+      setIsLive(false);
+      try {
+        soundEngine.playVictorySound();
+        confetti({
+          particleCount: 180,
+          spread: 100,
+          origin: { y: 0.45 },
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  // Dedicated deterministic round starter (immune to closure bugs & skipped rounds)
+  const startNewRound = (roundIdx: number) => {
+    // 1. Clear any pending timers
+    if (seqIntervalRef.current) {
+      clearInterval(seqIntervalRef.current);
+      seqIntervalRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (botTimeoutRef.current) {
+      clearTimeout(botTimeoutRef.current);
+      botTimeoutRef.current = null;
+    }
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
     }
 
-    if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (botTimeoutRef.current) clearTimeout(botTimeoutRef.current);
+    // 2. Synchronously reset ALL round state refs
+    currentRoundRef.current = roundIdx;
+    p1SubmittedRef.current = false;
+    p2SubmittedRef.current = false;
+    roundRevealedRef.current = false;
+    p1DigitsRef.current = '';
+    p2DigitsRef.current = '';
 
-    const q = questions[currentRound];
+    // 3. Update React states
+    setCurrentRound(roundIdx);
     setP1Digits('');
     setP2Digits('');
     setP1Submitted(false);
@@ -202,7 +292,17 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
     setP1LastResult(null);
     setP2LastResult(null);
     setRoundRevealed(false);
-    setIsShowingSeq(true);
+    setIsBotThinking(false);
+    setRoundTimeRemaining(qTimeLimit);
+
+    // 4. Validate question data
+    const qList = questionsRef.current.length > 0 ? questionsRef.current : questions;
+    const q = qList[roundIdx];
+    if (!q) {
+      setIsMatchOver(true);
+      setIsLive(false);
+      return;
+    }
 
     if (!q.promptSeq || q.promptSeq.length === 0) {
       setActiveToken(null);
@@ -211,30 +311,36 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
       return;
     }
 
-    // Play first token
+    // 5. Play flash sequence
+    setIsShowingSeq(true);
     setActiveToken(q.promptSeq[0]);
-    soundEngine.playTargetActivate();
+    try {
+      soundEngine.playTargetActivate();
+    } catch (e) {
+      console.error(e);
+    }
     let idx = 1;
 
     seqIntervalRef.current = setInterval(() => {
       if (idx < q.promptSeq.length) {
         setActiveToken(q.promptSeq[idx]);
-        soundEngine.playTargetActivate();
+        try {
+          soundEngine.playTargetActivate();
+        } catch (e) {
+          console.error(e);
+        }
         idx++;
       } else {
         setActiveToken(null);
         setIsShowingSeq(false);
-        if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+        if (seqIntervalRef.current) {
+          clearInterval(seqIntervalRef.current);
+          seqIntervalRef.current = null;
+        }
         startRoundAnswerPhase();
       }
     }, flashMs);
-
-    return () => {
-      if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (botTimeoutRef.current) clearTimeout(botTimeoutRef.current);
-    };
-  }, [currentRound, questions, isLive, isCountdownActive, flashMs, qTimeLimit]);
+  };
 
   // Answer phase timer countdown
   const startRoundAnswerPhase = () => {
@@ -242,211 +348,325 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
     let rem = qTimeLimit;
     setRoundTimeRemaining(rem);
 
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (botTimeoutRef.current) {
+      clearTimeout(botTimeoutRef.current);
+      botTimeoutRef.current = null;
+    }
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
+
     timerRef.current = setInterval(() => {
-      rem -= 0.1;
-      setRoundTimeRemaining(Math.max(0, rem));
+      rem = Math.max(0, Number((rem - 0.1).toFixed(1)));
+      setRoundTimeRemaining(rem);
       if (rem <= 0) {
-        clearInterval(timerRef.current!);
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
         handleRoundTimeExpired();
       }
     }, 100);
 
     // If playMode is 'vs-bot', schedule simulated AI answer
-    if (playMode === 'vs-bot') {
-      const q = questions[currentRound];
-      const botDelayMs = Math.floor(Math.random() * 1200) + 1400; // 1.4s - 2.6s realistic reaction
-      botTimeoutRef.current = setTimeout(() => {
-        handleBotAutoAnswer(q.answer);
-      }, botDelayMs);
+    if (playModeRef.current === 'vs-bot') {
+      const currRoundIdx = currentRoundRef.current;
+      const qList = questionsRef.current.length > 0 ? questionsRef.current : questions;
+      const currQ = qList[currRoundIdx];
+      if (currQ) {
+        setIsBotThinking(true);
+        // Fast, realistic response between 1.0s and 1.6s
+        const botDelayMs = Math.floor(Math.random() * 600) + 1100;
+        botTimeoutRef.current = setTimeout(() => {
+          if (roundRevealedRef.current || p2SubmittedRef.current) return;
+          setIsBotThinking(false);
+          const correctAnswer = currQ.answer;
+          const shouldBeCorrect = Math.random() < 0.88; // 88% bot accuracy
+          let botAns = correctAnswer;
+          if (!shouldBeCorrect) {
+            const wrongOffset = Math.random() < 0.5 ? 1 : -1;
+            botAns = String(Math.max(0, parseInt(correctAnswer, 10) + wrongOffset));
+          }
+          handleBotSubmission(botAns);
+        }, botDelayMs);
+      }
     }
   };
 
-  // Bot auto answer
-  const handleBotAutoAnswer = (correctAnswer: string) => {
-    if (p2Submitted || roundRevealed) return;
-    const shouldBeCorrect = Math.random() < 0.88; // 88% bot accuracy
-    let botAns = correctAnswer;
-    if (!shouldBeCorrect) {
-      const wrongOffset = Math.random() < 0.5 ? 1 : -1;
-      botAns = String(parseInt(correctAnswer, 10) + wrongOffset);
-    }
-
+  // Bot submission handler
+  const handleBotSubmission = (botAns: string) => {
+    if (roundRevealedRef.current || p2SubmittedRef.current) return;
+    p2SubmittedRef.current = true;
+    p2DigitsRef.current = botAns;
     setP2Digits(botAns);
+    setIsBotThinking(false);
     processPlayerSubmission(2, botAns);
   };
 
   // Process submission for P1 or P2
   const processPlayerSubmission = (player: 1 | 2, answerVal: string) => {
-    if (roundRevealed || !questions[currentRound]) return;
-    const q = questions[currentRound];
-    const isCorr = answerVal.trim() === q.answer.trim();
+    if (roundRevealedRef.current) return;
+    const currRoundIdx = currentRoundRef.current;
+    const qList = questionsRef.current.length > 0 ? questionsRef.current : questions;
+    const q = qList[currRoundIdx];
+    if (!q) return;
+
+    const isCorr = String(answerVal).trim() === String(q.answer).trim();
     const elapsed = Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000);
 
     if (player === 1) {
-      if (p1Submitted) return;
+      if (p1SubmittedRef.current) return;
+      p1SubmittedRef.current = true;
+      p1DigitsRef.current = answerVal;
       setP1Submitted(true);
       setP1TotalTime((t) => t + elapsed);
+
       if (isCorr) {
-        const newCombo = p1Combo + 1;
-        setP1Combo(newCombo);
-        setP1Score((s) => s + 200 + newCombo * 25);
+        setP1Combo((prev) => {
+          const newCombo = prev + 1;
+          setP1Score((s) => s + 200 + newCombo * 25);
+          try {
+            soundEngine.playCorrectSound(newCombo);
+          } catch (e) {
+            console.error(e);
+          }
+          return newCombo;
+        });
         setP1CorrectCount((c) => c + 1);
         setP1LastResult('correct');
-        soundEngine.playCorrectSound(newCombo);
+
+        // ⭐ SPEED VICTORY! Player 1 solved it correctly first!
+        if (playModeRef.current === 'vs-bot') {
+          if (botTimeoutRef.current) {
+            clearTimeout(botTimeoutRef.current);
+            botTimeoutRef.current = null;
+          }
+          setIsBotThinking(false);
+          p2SubmittedRef.current = true;
+          setP2Submitted(true);
+          p2DigitsRef.current = 'تأخر الرد ⚡';
+          setP2Digits('تأخر الرد ⚡');
+        }
+        concludeRound();
+        return;
       } else {
         setP1Combo(0);
         setP1WrongCount((w) => w + 1);
         setP1LastResult('wrong');
-        soundEngine.playWrongSound();
+        try {
+          soundEngine.playWrongSound();
+        } catch (e) {
+          console.error(e);
+        }
+        // In vs-bot mode: if player 1 is wrong, conclude soon so user is never stuck
+        if (playModeRef.current === 'vs-bot') {
+          setTimeout(() => {
+            if (!roundRevealedRef.current) {
+              concludeRound();
+            }
+          }, 800);
+        }
       }
     } else {
-      if (p2Submitted) return;
+      // Player 2 or Bot
+      if (p2SubmittedRef.current && player !== 2) return;
+      p2SubmittedRef.current = true;
+      p2DigitsRef.current = answerVal;
       setP2Submitted(true);
       setP2TotalTime((t) => t + elapsed);
+
       if (isCorr) {
-        const newCombo = p2Combo + 1;
-        setP2Combo(newCombo);
-        setP2Score((s) => s + 200 + newCombo * 25);
+        setP2Combo((prev) => {
+          const newCombo = prev + 1;
+          setP2Score((s) => s + 200 + newCombo * 25);
+          try {
+            soundEngine.playCorrectSound(newCombo);
+          } catch (e) {
+            console.error(e);
+          }
+          return newCombo;
+        });
         setP2CorrectCount((c) => c + 1);
         setP2LastResult('correct');
-        soundEngine.playCorrectSound(newCombo);
+
+        concludeRound();
+        return;
       } else {
         setP2Combo(0);
         setP2WrongCount((w) => w + 1);
         setP2LastResult('wrong');
-        soundEngine.playWrongSound();
+        try {
+          soundEngine.playWrongSound();
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
 
-    // Check if both submitted
-    const p1SubAfter = player === 1 ? true : p1Submitted;
-    const p2SubAfter = player === 2 ? true : p2Submitted;
-
-    if (p1SubAfter && p2SubAfter) {
+    // Check if both players have submitted
+    if (p1SubmittedRef.current && p2SubmittedRef.current) {
       concludeRound();
     }
   };
 
   // Round time expired
   const handleRoundTimeExpired = () => {
-    if (roundRevealed) return;
-    if (!p1Submitted) {
-      setP1Submitted(true);
+    if (roundRevealedRef.current) return;
+    p1SubmittedRef.current = true;
+    p2SubmittedRef.current = true;
+    setP1Submitted(true);
+    setP2Submitted(true);
+
+    if (!p1DigitsRef.current) {
       setP1WrongCount((w) => w + 1);
       setP1Combo(0);
       setP1LastResult('wrong');
       setP1TotalTime((t) => t + qTimeLimit);
     }
-    if (!p2Submitted) {
-      setP2Submitted(true);
+    if (!p2DigitsRef.current) {
       setP2WrongCount((w) => w + 1);
       setP2Combo(0);
       setP2LastResult('wrong');
       setP2TotalTime((t) => t + qTimeLimit);
     }
-    soundEngine.playWrongSound();
+    try {
+      soundEngine.playWrongSound();
+    } catch (e) {
+      console.error(e);
+    }
     concludeRound();
   };
 
   // Conclude the round and reveal answer
   const concludeRound = () => {
+    if (roundRevealedRef.current) return;
+    roundRevealedRef.current = true;
     setRoundRevealed(true);
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (botTimeoutRef.current) clearTimeout(botTimeoutRef.current);
+    setIsBotThinking(false);
 
-    const q = questions[currentRound];
-    const historyItem: RoundHistory = {
-      round: currentRound + 1,
-      questionText: formatPromptSequenceText(q.promptSeq),
-      correctAnswer: q.answer,
-      p1Answer: p1Digits || 'لم يجب',
-      p1Correct: p1Digits.trim() === q.answer.trim(),
-      p1TimeSec: Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000),
-      p2Answer: p2Digits || 'لم يجب',
-      p2Correct: p2Digits.trim() === q.answer.trim(),
-      p2TimeSec: Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000),
-    };
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (botTimeoutRef.current) {
+      clearTimeout(botTimeoutRef.current);
+      botTimeoutRef.current = null;
+    }
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
 
-    setMatchHistory((prev) => [...prev, historyItem]);
+    try {
+      const currIdx = currentRoundRef.current;
+      const qList = questionsRef.current.length > 0 ? questionsRef.current : questions;
+      const q = qList[currIdx];
 
-    // Advance to next round or end championship
-    setTimeout(() => {
-      if (currentRound + 1 < questions.length) {
-        setCurrentRound((prev) => prev + 1);
-      } else {
-        // Championship Finish!
-        setIsMatchOver(true);
-        setIsLive(false);
-        soundEngine.playVictorySound();
-        confetti({
-          particleCount: 180,
-          spread: 100,
-          origin: { y: 0.45 },
-        });
+      if (q) {
+        const p1Ans = p1DigitsRef.current || 'لم يجب';
+        const p2Ans = p2DigitsRef.current || (playModeRef.current === 'vs-bot' && p1SubmittedRef.current ? 'تأخر الرد' : 'لم يجب');
+        const historyItem: RoundHistory = {
+          round: currIdx + 1,
+          questionText: formatPromptSequenceText(q.promptSeq),
+          correctAnswer: q.answer,
+          p1Answer: p1Ans,
+          p1Correct: String(p1Ans).trim() === String(q.answer).trim(),
+          p1TimeSec: Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000),
+          p2Answer: p2Ans,
+          p2Correct: String(p2Ans).trim() === String(q.answer).trim(),
+          p2TimeSec: Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000),
+        };
+
+        setMatchHistory((prev) => [...prev, historyItem]);
       }
-    }, 1600);
+    } catch (e) {
+      console.error('Error logging round history:', e);
+    }
+
+    // Auto-advance to next round after 1.4s reveal
+    advanceTimeoutRef.current = setTimeout(() => {
+      advanceToNextRound();
+    }, 1400);
   };
 
-  // Player 1 Punch Digit
+  // Player 1 Punch Digit (Uses ref to construct full multi-digit number without stale closures)
   const handleP1Digit = (digit: number) => {
-    if (!isLive || isShowingSeq || p1Submitted || isMatchOver) return;
+    if (!isLive || isShowingSeq || p1SubmittedRef.current || roundRevealedRef.current || isMatchOver) return;
     soundEngine.playPunchImpact(0.9);
-    const newBuf = p1Digits + String(digit);
+    const current = p1DigitsRef.current || '';
+    const newBuf = current + String(digit);
+    p1DigitsRef.current = newBuf;
     setP1Digits(newBuf);
 
     // Auto-submit if buffer matches expected answer length
-    const expectedLen = questions[currentRound]?.answer?.length || 1;
+    const qList = questionsRef.current.length > 0 ? questionsRef.current : questions;
+    const currQ = qList[currentRoundRef.current];
+    const expectedLen = currQ?.answer?.length || 1;
     if (newBuf.length >= expectedLen) {
       processPlayerSubmission(1, newBuf);
     }
   };
 
   const handleP1Clear = () => {
-    if (!isLive || isShowingSeq || p1Submitted || isMatchOver) return;
+    if (!isLive || isShowingSeq || p1SubmittedRef.current || roundRevealedRef.current || isMatchOver) return;
     soundEngine.playPunchImpact(0.5);
+    p1DigitsRef.current = '';
     setP1Digits('');
   };
 
   const handleP1Backspace = () => {
-    if (!isLive || isShowingSeq || p1Submitted || isMatchOver) return;
+    if (!isLive || isShowingSeq || p1SubmittedRef.current || roundRevealedRef.current || isMatchOver) return;
     soundEngine.playPunchImpact(0.5);
-    setP1Digits((prev) => prev.slice(0, -1));
+    const updated = (p1DigitsRef.current || '').slice(0, -1);
+    p1DigitsRef.current = updated;
+    setP1Digits(updated);
   };
 
   const handleP1Submit = () => {
-    if (!isLive || isShowingSeq || p1Submitted || isMatchOver || !p1Digits) return;
-    processPlayerSubmission(1, p1Digits);
+    if (!isLive || isShowingSeq || p1SubmittedRef.current || roundRevealedRef.current || isMatchOver || !p1DigitsRef.current) return;
+    processPlayerSubmission(1, p1DigitsRef.current);
   };
 
-  // Player 2 Punch Digit
+  // Player 2 Punch Digit (Uses ref to construct full multi-digit number without stale closures)
   const handleP2Digit = (digit: number) => {
-    if (!isLive || isShowingSeq || p2Submitted || isMatchOver || playMode === 'vs-bot') return;
+    if (!isLive || isShowingSeq || p2SubmittedRef.current || roundRevealedRef.current || isMatchOver || playModeRef.current === 'vs-bot') return;
     soundEngine.playPunchImpact(0.9);
-    const newBuf = p2Digits + String(digit);
+    const current = p2DigitsRef.current || '';
+    const newBuf = current + String(digit);
+    p2DigitsRef.current = newBuf;
     setP2Digits(newBuf);
 
-    const expectedLen = questions[currentRound]?.answer?.length || 1;
+    const qList = questionsRef.current.length > 0 ? questionsRef.current : questions;
+    const currQ = qList[currentRoundRef.current];
+    const expectedLen = currQ?.answer?.length || 1;
     if (newBuf.length >= expectedLen) {
       processPlayerSubmission(2, newBuf);
     }
   };
 
   const handleP2Clear = () => {
-    if (!isLive || isShowingSeq || p2Submitted || isMatchOver || playMode === 'vs-bot') return;
+    if (!isLive || isShowingSeq || p2SubmittedRef.current || roundRevealedRef.current || isMatchOver || playModeRef.current === 'vs-bot') return;
     soundEngine.playPunchImpact(0.5);
+    p2DigitsRef.current = '';
     setP2Digits('');
   };
 
   const handleP2Backspace = () => {
-    if (!isLive || isShowingSeq || p2Submitted || isMatchOver || playMode === 'vs-bot') return;
+    if (!isLive || isShowingSeq || p2SubmittedRef.current || roundRevealedRef.current || isMatchOver || playModeRef.current === 'vs-bot') return;
     soundEngine.playPunchImpact(0.5);
-    setP2Digits((prev) => prev.slice(0, -1));
+    const updated = (p2DigitsRef.current || '').slice(0, -1);
+    p2DigitsRef.current = updated;
+    setP2Digits(updated);
   };
 
   const handleP2Submit = () => {
-    if (!isLive || isShowingSeq || p2Submitted || isMatchOver || !p2Digits || playMode === 'vs-bot') return;
-    processPlayerSubmission(2, p2Digits);
+    if (!isLive || isShowingSeq || p2SubmittedRef.current || roundRevealedRef.current || isMatchOver || !p2DigitsRef.current || playModeRef.current === 'vs-bot') return;
+    processPlayerSubmission(2, p2DigitsRef.current);
   };
 
   // ⭐ Precise Winner Determination & Tie-Breaking Criteria ⭐
@@ -516,7 +736,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
         <div className="text-center">
           <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-amber-400 uppercase tracking-widest">
             <Trophy className="w-3.5 h-3.5" />
-            <span>Speed Digits • Competition</span>
+            <span>Mind Sport • Competition</span>
           </div>
           <h1 className="text-lg sm:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-amber-300 to-purple-400">
             بطولة تحدي الحساب الذهني
@@ -549,38 +769,42 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
             اللاعبان على النقر السريع على الأرقام المبعثرة المتطابقة للفوز بكأس البطولة!
           </p>
 
-          {/* Mode Selector (2 Students vs AI Bot) */}
+          {/* Mode Selector (AI Bot vs 2 Students) */}
           <div className="w-full grid grid-cols-2 gap-3 mb-5">
             <button
               type="button"
               onClick={() => {
                 soundEngine.playTargetActivate();
-                setPlayMode('two-students');
+                setPlayMode('vs-bot');
+                playModeRef.current = 'vs-bot';
+                setP2Name('روبوت الحساب السريع 🤖');
               }}
               className={`p-3.5 rounded-2xl border transition-all flex items-center justify-center gap-2.5 font-bold text-xs sm:text-sm cursor-pointer ${
-                playMode === 'two-students'
-                  ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-[1.02]'
+                playMode === 'vs-bot'
+                  ? 'bg-purple-500/25 border-purple-400 text-purple-200 shadow-[0_0_20px_rgba(168,85,247,0.4)] scale-[1.02]'
                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
               }`}
             >
-              <Users className="w-5 h-5 text-cyan-400" />
-              <span>طالب ضد طالب (شاشة واحدة)</span>
+              <Bot className="w-5 h-5 text-purple-400" />
+              <span>تحدي ضد الذكاء الاصطناعي (طالب واحد 🤖)</span>
             </button>
 
             <button
               type="button"
               onClick={() => {
                 soundEngine.playTargetActivate();
-                setPlayMode('vs-bot');
+                setPlayMode('two-students');
+                playModeRef.current = 'two-students';
+                setP2Name('المتسابق 2');
               }}
               className={`p-3.5 rounded-2xl border transition-all flex items-center justify-center gap-2.5 font-bold text-xs sm:text-sm cursor-pointer ${
-                playMode === 'vs-bot'
-                  ? 'bg-purple-500/20 border-purple-400 text-purple-200 shadow-[0_0_20px_rgba(168,85,247,0.3)] scale-[1.02]'
+                playMode === 'two-students'
+                  ? 'bg-cyan-500/25 border-cyan-400 text-cyan-200 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-[1.02]'
                   : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
               }`}
             >
-              <Bot className="w-5 h-5 text-purple-400" />
-              <span>تحدي ضد الروبوت (طالب واحد)</span>
+              <Users className="w-5 h-5 text-cyan-400" />
+              <span>طالب ضد طالب (شاشة واحدة 👥)</span>
             </button>
           </div>
 
@@ -603,11 +827,11 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
             <div className="text-right p-3 rounded-2xl bg-purple-950/30 border border-purple-500/30">
               <label className="text-[11px] font-bold text-purple-300 block mb-1.5 flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
-                {playMode === 'vs-bot' ? 'المنافس الآلي (الروبوت)' : 'اسم المتسابق الثاني (الجهة اليمنى)'}
+                {playMode === 'vs-bot' ? 'المنافس الآلي (الذكاء الاصطناعي)' : 'اسم المتسابق الثاني (الجهة اليمنى)'}
               </label>
               <input
                 type="text"
-                value={playMode === 'vs-bot' ? 'روبوت الحساب السريع ⚡' : p2Name}
+                value={playMode === 'vs-bot' ? 'روبوت الحساب السريع 🤖' : p2Name}
                 onChange={(e) => setP2Name(e.target.value)}
                 disabled={playMode === 'vs-bot'}
                 placeholder="المتسابق 2"
@@ -1022,34 +1246,39 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
           </div>
 
           {/* THE WHITEBOARD COMPETITION SURFACE (Splits in 2 with Central Question Cell) */}
-          <div className="relative w-full flex-1 min-h-[540px] sm:min-h-[600px] md:min-h-[660px] lg:min-h-[720px] rounded-3xl bg-gradient-to-b from-[#0b1022] via-[#090d1c] to-[#060914] border-2 border-slate-700/60 shadow-[0_0_50px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col">
+          <div className="relative w-full flex-1 min-h-[460px] sm:min-h-[500px] md:min-h-[540px] rounded-3xl bg-gradient-to-b from-[#0b1022] via-[#090d1c] to-[#060914] border-2 border-slate-700/60 shadow-[0_0_50px_rgba(0,0,0,0.7)] overflow-hidden flex flex-col">
             {/* Whiteboard Perimeter Frame (like the red marker frame in the video) */}
             <div className="absolute inset-0 border-4 border-rose-500/20 rounded-3xl pointer-events-none z-10" />
 
             {/* Central Dividing Line (as drawn by the teacher in the video) */}
             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1.5 bg-gradient-to-b from-cyan-500/30 via-slate-600/60 to-purple-500/30 z-0 pointer-events-none" />
 
-            {/* ⭐ THE ENLARGED CENTRAL QUESTION CIRCLE / CELL (دائرة السؤال الكبرى في المنتصف بتصميم بارز وواضح) ⭐ */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center pointer-events-none select-none">
+            {/* ⭐ THE PROMINENT CENTRAL QUESTION CIRCLE / CELL (حصر التكبير على الدائرة والرقم في الوسط فقط ليكون فائق الوضوح للطلاب) ⭐ */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center justify-center select-none">
               {/* Central Glowing Cell */}
               <div
-                className={`relative w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 lg:w-60 lg:h-60 rounded-full flex flex-col items-center justify-center p-2 sm:p-2.5 transition-all duration-300 shadow-[0_0_50px_rgba(0,0,0,0.95)] ${
+                onClick={() => {
+                  if (roundRevealed) advanceToNextRound();
+                }}
+                className={`relative w-36 h-36 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-52 lg:h-52 rounded-full flex flex-col items-center justify-center p-2 sm:p-2.5 transition-all duration-300 shadow-[0_0_40px_rgba(0,0,0,0.95)] ${
+                  roundRevealed ? 'cursor-pointer hover:scale-105 active:scale-95' : 'pointer-events-none'
+                } ${
                   isShowingSeq
-                    ? 'bg-gradient-to-tr from-cyan-950 via-slate-900 to-purple-950 border-4 sm:border-5 border-amber-400 shadow-[0_0_45px_rgba(245,158,11,0.6)] scale-105'
+                    ? 'bg-gradient-to-tr from-cyan-950 via-slate-900 to-purple-950 border-3 sm:border-4 border-amber-400 shadow-[0_0_40px_rgba(245,158,11,0.7)] scale-105'
                     : roundRevealed
-                    ? 'bg-gradient-to-tr from-emerald-950 via-slate-900 to-emerald-900 border-4 sm:border-5 border-emerald-400 shadow-[0_0_45px_rgba(16,185,129,0.6)]'
-                    : 'bg-slate-950/95 border-4 sm:border-5 border-cyan-400/80 shadow-[0_0_40px_rgba(6,182,212,0.4)]'
+                    ? 'bg-gradient-to-tr from-emerald-950 via-slate-900 to-emerald-900 border-3 sm:border-4 border-emerald-400 shadow-[0_0_40px_rgba(16,185,129,0.7)] animate-pulse'
+                    : 'bg-slate-950/95 border-3 sm:border-4 border-cyan-400/80 shadow-[0_0_30px_rgba(6,182,212,0.5)]'
                 }`}
               >
                 {/* Secondary inner ring with ambient depth */}
-                <div className="w-full h-full rounded-full border-2 border-dashed border-white/25 flex flex-col items-center justify-center relative overflow-hidden bg-radial from-slate-800/60 to-slate-950 shadow-inner">
-                  {/* Flashing content */}
+                <div className="w-full h-full rounded-full border border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden bg-radial from-slate-800/60 to-slate-950 shadow-inner">
+                  {/* Flashing content - prominently enlarged for clear visibility */}
                   {isShowingSeq ? (
                     <div className="flex flex-col items-center justify-center animate-pulse">
-                      <span className="text-[10px] sm:text-xs font-bold text-amber-400 uppercase tracking-widest mb-1">
+                      <span className="text-[10px] sm:text-xs font-bold text-amber-400 uppercase tracking-widest mb-0.5 sm:mb-1">
                         انتبه للرقم!
                       </span>
-                      <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_25px_rgba(245,158,11,0.9)]">
+                      <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_30px_rgba(245,158,11,1)]">
                         {activeToken ? (
                           activeToken.value.startsWith('-')
                             ? activeToken.value
@@ -1061,24 +1290,24 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                     </div>
                   ) : roundRevealed ? (
                     <div className="flex flex-col items-center justify-center animate-bounce">
-                      <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5 sm:mb-1">
                         الإجابة الصحيحة
                       </span>
-                      <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black font-mono text-emerald-300 drop-shadow-[0_0_25px_rgba(16,185,129,0.9)]">
+                      <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black font-mono text-emerald-300 drop-shadow-[0_0_30px_rgba(16,185,129,1)]">
                         = {questions[currentRound]?.answer}
                       </span>
                     </div>
                   ) : (
                     /* Answer Phase / Countdown */
                     <div className="flex flex-col items-center justify-center text-center">
-                      <span className="text-[10px] sm:text-xs font-bold text-cyan-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                        <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-spin" />
-                        احسب وانقر!
+                      <span className="text-[9px] sm:text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-0.5 sm:mb-1 flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-amber-400 animate-spin" />
+                        احسب وأجب!
                       </span>
-                      <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black font-mono text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                      <span className="text-3xl sm:text-4xl md:text-5xl font-black font-mono text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]">
                         {roundTimeRemaining.toFixed(1)}s
                       </span>
-                      <div className="w-20 sm:w-28 md:w-32 bg-slate-800 h-1.5 sm:h-2 rounded-full overflow-hidden mt-1.5">
+                      <div className="w-18 sm:w-22 md:w-28 bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
                         <div
                           className="h-full bg-gradient-to-r from-amber-400 to-rose-500 transition-all duration-100"
                           style={{ width: `${(roundTimeRemaining / qTimeLimit) * 100}%` }}
@@ -1089,10 +1318,20 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                 </div>
               </div>
 
-              {/* Central Title Tag */}
-              <div className="mt-2 px-3 py-0.5 rounded-full bg-slate-900/95 border border-white/20 text-[9px] sm:text-[10px] font-bold text-slate-300 shadow">
-                {isShowingSeq ? 'وميض السؤال' : roundRevealed ? 'نتيجة الجولة' : 'طور الإجابة السريعة'}
-              </div>
+              {/* Central Title Tag or Next Round Interactive Button */}
+              {roundRevealed ? (
+                <button
+                  onClick={advanceToNextRound}
+                  className="mt-2.5 px-4 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.6)] cursor-pointer active:scale-95 transition-all animate-bounce"
+                >
+                  <span>الجولة التالية</span>
+                  <span>➜</span>
+                </button>
+              ) : (
+                <div className="mt-2 px-3 py-0.5 rounded-full bg-slate-900/95 border border-white/20 text-[9px] sm:text-[10px] font-bold text-slate-300 shadow pointer-events-none">
+                  {isShowingSeq ? 'وميض السؤال' : 'طور الإجابة السريعة'}
+                </div>
+              )}
             </div>
 
             {/* Split Screen Container (Left Player Half vs Right Player Half) */}
@@ -1128,8 +1367,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                   </div>
                 </div>
 
-                {/* P1 Organic Scattered Number Circles (0-9) - 100% Unobscured & Fully Visible! */}
-                <div className="relative flex-1 w-full my-1 min-h-[360px] sm:min-h-[420px]">
+                {/* P1 Organic Scattered Number Circles (0-9) - Standard Compact Size */}
+                <div className="relative flex-1 w-full my-1 min-h-[280px] sm:min-h-[320px]">
                   {P1_SCATTERED_LAYOUT.map((item) => (
                     <button
                       key={`p1_${item.digit}`}
@@ -1140,7 +1379,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                         left: item.left,
                         transform: 'translate(-50%, -50%)',
                       }}
-                      className={`absolute z-10 w-13 h-13 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 rounded-full font-black text-2xl sm:text-3xl md:text-4xl transition-all duration-150 flex items-center justify-center cursor-pointer select-none active:scale-90 ${
+                      className={`absolute z-10 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full font-black text-xl sm:text-2xl md:text-3xl transition-all duration-150 flex items-center justify-center cursor-pointer select-none active:scale-90 ${
                         isShowingSeq || p1Submitted
                           ? 'bg-slate-900/60 border-2 border-slate-700/60 text-slate-500 opacity-60 cursor-not-allowed'
                           : 'bg-gradient-to-b from-cyan-950 via-slate-900 to-slate-950 border-2 sm:border-3 border-cyan-400 text-cyan-200 hover:text-white hover:border-cyan-300 hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] shadow-[0_0_15px_rgba(6,182,212,0.25)]'
@@ -1209,7 +1448,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                     <span className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.8)] animate-pulse" />
                     <div>
                       <div className="text-[9px] font-bold text-purple-400 uppercase tracking-widest">
-                        {playMode === 'vs-bot' ? 'المنافس الآلي' : 'المتسابق الثاني'}
+                        {playMode === 'vs-bot' ? 'المنافس الآلي (الذكاء الاصطناعي 🤖)' : 'المتسابق الثاني'}
                       </div>
                       <div className="text-xs sm:text-sm font-black text-white">{p2Name}</div>
                     </div>
@@ -1219,8 +1458,12 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                   <div className="flex items-center gap-2.5">
                     <div className="text-right">
                       <div className="text-[8px] text-slate-400 font-bold uppercase">المدخل:</div>
-                      <div className="text-xs sm:text-sm font-black font-mono text-purple-300 min-w-[28px] text-center bg-purple-950/60 border border-purple-400/40 px-1.5 py-0.5 rounded-lg">
-                        {p2Digits || '—'}
+                      <div className="text-xs sm:text-sm font-black font-mono text-purple-300 min-w-[32px] text-center bg-purple-950/60 border border-purple-400/40 px-2 py-0.5 rounded-lg">
+                        {isBotThinking && playMode === 'vs-bot' ? (
+                          <span className="text-[10px] text-amber-300 animate-pulse font-sans">يفكر... ⚡</span>
+                        ) : (
+                          p2Digits || '—'
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
@@ -1230,8 +1473,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                   </div>
                 </div>
 
-                {/* P2 Organic Scattered Number Circles (0-9) - 100% Unobscured & Fully Visible! */}
-                <div className="relative flex-1 w-full my-1 min-h-[360px] sm:min-h-[420px]">
+                {/* P2 Organic Scattered Number Circles (0-9) - Standard Compact Size */}
+                <div className="relative flex-1 w-full my-1 min-h-[280px] sm:min-h-[320px]">
                   {P2_SCATTERED_LAYOUT.map((item) => (
                     <button
                       key={`p2_${item.digit}`}
@@ -1242,7 +1485,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                         left: item.left,
                         transform: 'translate(-50%, -50%)',
                       }}
-                      className={`absolute z-10 w-13 h-13 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 rounded-full font-black text-2xl sm:text-3xl md:text-4xl transition-all duration-150 flex items-center justify-center cursor-pointer select-none active:scale-90 ${
+                      className={`absolute z-10 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full font-black text-xl sm:text-2xl md:text-3xl transition-all duration-150 flex items-center justify-center cursor-pointer select-none active:scale-90 ${
                         isShowingSeq || p2Submitted || playMode === 'vs-bot'
                           ? 'bg-slate-900/60 border-2 border-slate-700/60 text-slate-500 opacity-60 cursor-not-allowed'
                           : 'bg-gradient-to-b from-purple-950 via-slate-900 to-slate-950 border-2 sm:border-3 border-purple-400 text-purple-200 hover:text-white hover:border-purple-300 hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] shadow-[0_0_15px_rgba(168,85,247,0.25)]'
@@ -1307,8 +1550,11 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
       {/* 3-2-1 Mental Math Countdown Overlay */}
       {isCountdownActive && (
         <StartCountdown
-          title={`مسابقة التحدي الثنائية - ${p1Name} ضد ${p2Name}`}
-          onComplete={() => setIsCountdownActive(false)}
+          title={`مسابقة التحدي - ${p1Name} ضد ${p2Name}`}
+          onComplete={() => {
+            setIsCountdownActive(false);
+            startNewRound(0);
+          }}
         />
       )}
     </div>

@@ -268,10 +268,10 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
           <span className="hidden sm:inline">MENU</span>
         </button>
 
-        {/* Speed Digits Brand Title */}
+        {/* Mind Sport Brand Title */}
         <div className="text-center">
           <h1 className="text-xl sm:text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-300 to-purple-400 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">
-            Speed Digits
+            Mind Sport
           </h1>
         </div>
 
@@ -411,7 +411,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
               onSubmitAnswer={handleSubmitAnswer}
               flashStatus={flashStatus}
               interactive={!isShowingSequence}
-              labelTitle={questions[currentQIndex]?.displayTitle || 'Speed Digits'}
+              labelTitle={questions[currentQIndex]?.displayTitle || 'Mind Sport'}
             />
           </div>
         </div>

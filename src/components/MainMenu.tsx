@@ -69,7 +69,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         <div className="flex items-center gap-2.5">
           <div className="w-3 h-3 bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.9)] rounded-sm" />
           <span className="text-base sm:text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-400 to-purple-400">
-            Speed Digits
+            Mind Sport
           </span>
         </div>
 
@@ -130,7 +130,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       {/* Main Hero & Navigation Grid */}
       <main className="relative z-10 my-auto text-center max-w-5xl w-full flex flex-col items-center py-6 sm:py-10">
         <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-300 to-purple-400 mb-8 sm:mb-12 drop-shadow-[0_0_35px_rgba(236,72,153,0.4)]">
-          Speed Digits
+          Mind Sport
         </h1>
 
         {/* Primary Menu Navigation Cards */}
