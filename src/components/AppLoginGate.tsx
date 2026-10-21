@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, Sparkles, ShieldCheck, AlertCircle, ArrowRight, Gamepad2, GraduationCap, Settings, Shield } from 'lucide-react';
 import { verifyStudentLogin, verifyAdminLogin, setAppAuthenticated, UserRole } from '../utils/appAuth';
 import { soundEngine } from '../utils/audio';
-import { LicenseModal } from './LicenseModal';
 
 interface AppLoginGateProps {
   onLoginSuccess: (role: UserRole) => void;
@@ -15,7 +14,6 @@ export const AppLoginGate: React.FC<AppLoginGateProps> = ({ onLoginSuccess }) =>
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showLicense, setShowLicense] = useState<boolean>(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,30 +234,19 @@ export const AppLoginGate: React.FC<AppLoginGateProps> = ({ onLoginSuccess }) =>
           </button>
         </form>
 
-        {/* Security & License Notice */}
-        <div className="mt-5 pt-3.5 border-t border-white/10 text-center space-y-2">
+        {/* Security & System Notice */}
+        <div className="mt-5 pt-3.5 border-t border-white/10 text-center space-y-1.5">
           <div className="text-[11px] text-slate-400 flex items-center justify-center gap-1.5 font-medium">
             <Lock className="w-3.5 h-3.5 text-pink-400/80" />
-            <span>نظام محمي • Mind Sport Interactive SpeedDigits</span>
+            <span>نظام محمي • Mind Sport Platform</span>
           </div>
 
-          <div className="flex flex-col items-center justify-center gap-1 text-[11px] text-slate-400">
-            <div>© 2026 شركة رياضة العقل • جميع الحقوق محفوظة</div>
-            <button
-              type="button"
-              onClick={() => setShowLicense(true)}
-              className="inline-flex items-center gap-1 text-pink-400 hover:text-pink-300 underline underline-offset-2 hover:opacity-100 opacity-90 transition-all cursor-pointer font-semibold"
-            >
-              <Shield className="w-3 h-3" />
-              <span>ملف الترخيص (License File)</span>
-            </button>
+          <div className="text-[11px] text-slate-500">
+            © 2026 شركة رياضة العقل • جميع الحقوق محفوظة
           </div>
         </div>
 
       </div>
-
-      {/* License Modal */}
-      <LicenseModal isOpen={showLicense} onClose={() => setShowLicense(false)} />
     </div>
   );
 };

@@ -3,7 +3,6 @@ import { GameMode, LEDTheme, SoundSettings, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
 import { Play, Users, Trophy, Volume2, ShieldCheck, Sparkles, Lock, LogOut, GraduationCap, Shield, Zap, RefreshCw, Check } from 'lucide-react';
 import { AdminLoginModal } from './AdminLoginModal';
-import { LicenseModal } from './LicenseModal';
 import { UserRole } from '../utils/appAuth';
 import { getActiveSpeedInfo, fetchRemoteAdminSettings } from '../utils/adminSettings';
 
@@ -30,7 +29,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [showLicense, setShowLicense] = useState(false);
   const [isRefreshingSpeed, setIsRefreshingSpeed] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
 
@@ -182,31 +180,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         </div>
       </main>
 
-      {/* Footer with Copyright and License */}
+      {/* Footer with Copyright */}
       <footer className="relative z-10 w-full max-w-7xl mt-8 pt-4 pb-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
         <div className="flex items-center gap-2 text-center sm:text-right">
           <span>Copyright © 2026 <strong>شركة رياضة العقل</strong>. All rights reserved.</span>
           <span className="hidden sm:inline opacity-40">•</span>
           <span className="hidden sm:inline text-slate-400/80">صُممت وبرمجت لصالح شركة رياضة العقل</span>
         </div>
-
-        <button
-          onClick={() => {
-            soundEngine.playTargetActivate();
-            setShowLicense(true);
-          }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-pink-500/20 border border-white/10 hover:border-pink-500/30 text-pink-300 transition-all cursor-pointer font-medium text-xs"
-        >
-          <Shield className="w-3.5 h-3.5 text-pink-400" />
-          <span>ملف الترخيص والملكية الفكرية (License)</span>
-        </button>
+        <div className="text-[11px] text-slate-500 font-mono">
+          Mind Sport Platform v2.5
+        </div>
       </footer>
-
-      {/* License Modal */}
-      <LicenseModal
-        isOpen={showLicense}
-        onClose={() => setShowLicense(false)}
-      />
 
       {/* Admin Login Gate Modal */}
       <AdminLoginModal

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { StudentRecord, AdminSettings } from '../types';
 import { soundEngine } from '../utils/audio';
-import { ArrowLeft, GraduationCap, Users, Plus, Download, Sparkles, ShieldCheck, FileText, Gauge, Zap, Play, Settings, CheckCircle2, RotateCcw, KeyRound, LogOut, Lock, Sliders, ChevronDown, ChevronUp, Check, Save, Home, Table, Eye, BookOpen } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Users, Plus, Download, Sparkles, ShieldCheck, FileText, Gauge, Zap, Play, Settings, CheckCircle2, RotateCcw, KeyRound, LogOut, Lock, Sliders, ChevronDown, ChevronUp, Check, Save, Home, Table, Eye, BookOpen, Shield } from 'lucide-react';
 import { ChangePasswordModal } from './ChangePasswordModal';
+import { LicenseModal } from './LicenseModal';
 import { getAdminUsername } from '../utils/adminAuth';
 import {
   THREE_SPEED_PRESETS,
@@ -26,6 +27,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onUpdateAdminSettings,
 }) => {
   const [showChangePasswordModal, setShowChangePasswordModal] = useState<boolean>(false);
+  const [showLicenseModal, setShowLicenseModal] = useState<boolean>(false);
   const [showAdvancedSliders, setShowAdvancedSliders] = useState<boolean>(false);
   const [stagedSettings, setStagedSettings] = useState<AdminSettings>(adminSettings);
   const [showAppliedToast, setShowAppliedToast] = useState<boolean>(false);
@@ -306,7 +308,18 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
+        <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
+          <button
+            onClick={() => {
+              soundEngine.playTargetActivate();
+              setShowLicenseModal(true);
+            }}
+            className="px-3.5 py-2 rounded-2xl bg-pink-500/15 hover:bg-pink-500/25 backdrop-blur-md border border-pink-400/40 text-pink-200 hover:text-white flex items-center gap-1.5 text-xs font-bold uppercase transition-all shadow-lg hover:shadow-[0_0_15px_rgba(236,72,153,0.3)] cursor-pointer"
+          >
+            <Shield className="w-3.5 h-3.5 text-pink-400" />
+            <span>ملف الترخيص والملكية (License)</span>
+          </button>
+
           <button
             onClick={() => {
               soundEngine.playTargetActivate();
@@ -1167,6 +1180,56 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             )}
           </div>
 
+          {/* Intellectual Property & License Card (Admin Exclusive) */}
+          <div className="bg-gradient-to-br from-pink-950/30 via-slate-900/60 to-purple-950/30 backdrop-blur-xl border border-pink-500/30 rounded-3xl p-5 shadow-[0_0_40px_rgba(236,72,153,0.15)] flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-300">
+                  <Shield className="w-4 h-4 text-pink-400" />
+                </div>
+                <div className="text-right">
+                  <h3 className="text-sm font-black text-white">
+                    ملف الترخيص والملكية الفكرية
+                  </h3>
+                  <p className="text-[10px] text-pink-300/80 font-mono">
+                    Mind Sport Commercial License
+                  </p>
+                </div>
+              </div>
+
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold">
+                ✓ مرخّص ومعتمد
+              </span>
+            </div>
+
+            <div className="text-xs text-slate-300 space-y-1.5 mb-4 text-right">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-400">الجهة المالكة:</span>
+                <span className="font-bold text-white">شركة رياضة العقل (Mind Sport LLC)</span>
+              </div>
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-400">نوع الترخيص:</span>
+                <span className="font-bold text-pink-300">Commercial Proprietary License</span>
+              </div>
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-400">صلاحية العرض:</span>
+                <span className="font-bold text-amber-300">لوحة تحكم الأدمن فقط</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                soundEngine.playTargetActivate();
+                setShowLicenseModal(true);
+              }}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-600/30 to-purple-600/30 hover:from-pink-600/50 hover:to-purple-600/50 border border-pink-500/40 text-pink-200 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-95"
+            >
+              <FileText className="w-3.5 h-3.5 text-pink-400" />
+              <span>عرض نص الترخيص الرسمي كاملاً / View License</span>
+            </button>
+          </div>
+
         </div>
 
       </div>
@@ -1175,6 +1238,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       <ChangePasswordModal
         isOpen={showChangePasswordModal}
         onClose={() => setShowChangePasswordModal(false)}
+      />
+
+      {/* License Modal - Admin Exclusive */}
+      <LicenseModal
+        isOpen={showLicenseModal}
+        onClose={() => setShowLicenseModal(false)}
       />
     </div>
   );
