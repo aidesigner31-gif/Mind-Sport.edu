@@ -89,10 +89,10 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   const [isCountdownActive, setIsCountdownActive] = useState<boolean>(false);
   const [isMatchOver, setIsMatchOver] = useState<boolean>(false);
 
-  // Play mode: 'two-students' or 'vs-bot' (Defaults to vs-bot for instant solo play against AI)
-  const [playMode, setPlayMode] = useState<'two-students' | 'vs-bot'>('vs-bot');
+  // Play mode: 'two-students' or 'vs-bot' (Defaults to two-students for natural two-player competition)
+  const [playMode, setPlayMode] = useState<'two-students' | 'vs-bot'>('two-students');
   const [p1Name, setP1Name] = useState<string>('المتسابق 1');
-  const [p2Name, setP2Name] = useState<string>('روبوت الحساب السريع 🤖');
+  const [p2Name, setP2Name] = useState<string>('المتسابق 2');
   const [isBotThinking, setIsBotThinking] = useState<boolean>(false);
   const [totalRounds, setTotalRounds] = useState<number>(5);
   const [selectedLevel, setSelectedLevel] = useState<number>(activeAdminSettings.targetLevel ?? 1);
@@ -138,7 +138,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   const advanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Synchronous state refs to prevent stale closures and freezing
-  const playModeRef = useRef<'two-students' | 'vs-bot'>('vs-bot');
+  const playModeRef = useRef<'two-students' | 'vs-bot'>('two-students');
   const p1SubmittedRef = useRef<boolean>(false);
   const p2SubmittedRef = useRef<boolean>(false);
   const roundRevealedRef = useRef<boolean>(false);
@@ -146,6 +146,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   const questionsRef = useRef<Question[]>([]);
   const p1DigitsRef = useRef<string>('');
   const p2DigitsRef = useRef<string>('');
+  const p1RoundTimeRef = useRef<number>(0);
+  const p2RoundTimeRef = useRef<number>(0);
 
   useEffect(() => {
     playModeRef.current = playMode;
@@ -199,6 +201,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
     roundRevealedRef.current = false;
     p1DigitsRef.current = '';
     p2DigitsRef.current = '';
+    p1RoundTimeRef.current = 0;
+    p2RoundTimeRef.current = 0;
 
     // Reset scores & stats
     setP1Score(0);
@@ -282,6 +286,8 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
     roundRevealedRef.current = false;
     p1DigitsRef.current = '';
     p2DigitsRef.current = '';
+    p1RoundTimeRef.current = 0;
+    p2RoundTimeRef.current = 0;
 
     // 3. Update React states
     setCurrentRound(roundIdx);
@@ -423,6 +429,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
       if (p1SubmittedRef.current) return;
       p1SubmittedRef.current = true;
       p1DigitsRef.current = answerVal;
+      p1RoundTimeRef.current = elapsed;
       setP1Submitted(true);
       setP1TotalTime((t) => t + elapsed);
 
@@ -439,21 +446,6 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
         });
         setP1CorrectCount((c) => c + 1);
         setP1LastResult('correct');
-
-        // ⭐ SPEED VICTORY! Player 1 solved it correctly first!
-        if (playModeRef.current === 'vs-bot') {
-          if (botTimeoutRef.current) {
-            clearTimeout(botTimeoutRef.current);
-            botTimeoutRef.current = null;
-          }
-          setIsBotThinking(false);
-          p2SubmittedRef.current = true;
-          setP2Submitted(true);
-          p2DigitsRef.current = 'تأخر الرد ⚡';
-          setP2Digits('تأخر الرد ⚡');
-        }
-        concludeRound();
-        return;
       } else {
         setP1Combo(0);
         setP1WrongCount((w) => w + 1);
@@ -463,20 +455,13 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
         } catch (e) {
           console.error(e);
         }
-        // In vs-bot mode: if player 1 is wrong, conclude soon so user is never stuck
-        if (playModeRef.current === 'vs-bot') {
-          setTimeout(() => {
-            if (!roundRevealedRef.current) {
-              concludeRound();
-            }
-          }, 800);
-        }
       }
     } else {
       // Player 2 or Bot
       if (p2SubmittedRef.current && player !== 2) return;
       p2SubmittedRef.current = true;
       p2DigitsRef.current = answerVal;
+      p2RoundTimeRef.current = elapsed;
       setP2Submitted(true);
       setP2TotalTime((t) => t + elapsed);
 
@@ -493,9 +478,6 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
         });
         setP2CorrectCount((c) => c + 1);
         setP2LastResult('correct');
-
-        concludeRound();
-        return;
       } else {
         setP2Combo(0);
         setP2WrongCount((w) => w + 1);
@@ -508,32 +490,37 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
       }
     }
 
-    // Check if both players have submitted
+    // ⭐ ONLY conclude the round when BOTH players have submitted!
+    // When contestant 1 answers, the system registers contestant 1's answer and
+    // continues waiting normally for contestant 2 to answer without locking them out!
     if (p1SubmittedRef.current && p2SubmittedRef.current) {
       concludeRound();
     }
   };
 
-  // Round time expired
+  // Round time expired: mark any player who hasn't submitted yet as timed out / wrong
   const handleRoundTimeExpired = () => {
     if (roundRevealedRef.current) return;
-    p1SubmittedRef.current = true;
-    p2SubmittedRef.current = true;
-    setP1Submitted(true);
-    setP2Submitted(true);
 
-    if (!p1DigitsRef.current) {
+    if (!p1SubmittedRef.current) {
+      p1SubmittedRef.current = true;
+      setP1Submitted(true);
       setP1WrongCount((w) => w + 1);
       setP1Combo(0);
       setP1LastResult('wrong');
       setP1TotalTime((t) => t + qTimeLimit);
+      p1RoundTimeRef.current = qTimeLimit;
     }
-    if (!p2DigitsRef.current) {
+    if (!p2SubmittedRef.current) {
+      p2SubmittedRef.current = true;
+      setP2Submitted(true);
       setP2WrongCount((w) => w + 1);
       setP2Combo(0);
       setP2LastResult('wrong');
       setP2TotalTime((t) => t + qTimeLimit);
+      p2RoundTimeRef.current = qTimeLimit;
     }
+
     try {
       soundEngine.playWrongSound();
     } catch (e) {
@@ -569,17 +556,17 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
 
       if (q) {
         const p1Ans = p1DigitsRef.current || 'لم يجب';
-        const p2Ans = p2DigitsRef.current || (playModeRef.current === 'vs-bot' && p1SubmittedRef.current ? 'تأخر الرد' : 'لم يجب');
+        const p2Ans = p2DigitsRef.current || 'لم يجب';
         const historyItem: RoundHistory = {
           round: currIdx + 1,
           questionText: formatPromptSequenceText(q.promptSeq),
           correctAnswer: q.answer,
           p1Answer: p1Ans,
           p1Correct: String(p1Ans).trim() === String(q.answer).trim(),
-          p1TimeSec: Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000),
+          p1TimeSec: p1RoundTimeRef.current || Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000),
           p2Answer: p2Ans,
           p2Correct: String(p2Ans).trim() === String(q.answer).trim(),
-          p2TimeSec: Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000),
+          p2TimeSec: p2RoundTimeRef.current || Math.max(0.1, (Date.now() - roundStartTimestampRef.current) / 1000),
         };
 
         setMatchHistory((prev) => [...prev, historyItem]);
