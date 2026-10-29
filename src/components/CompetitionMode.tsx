@@ -827,6 +827,43 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
             </div>
           </div>
 
+          {/* Mode Selector (Easy vs Advanced) */}
+          <div className="w-full mb-4 text-right">
+            <label className="text-[11px] font-bold text-slate-300 block mb-2">فئة الصعوبة (Mode):</label>
+            <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-950/60 rounded-2xl border border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  soundEngine.playTargetActivate();
+                  setIsComplex(false);
+                }}
+                className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  !isComplex
+                    ? 'bg-cyan-500/25 border border-cyan-400 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.4)] scale-[1.01]'
+                    : 'text-slate-400 hover:text-white bg-transparent'
+                }`}
+              >
+                <span>المستوى السهل (Easy)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  soundEngine.playTargetActivate();
+                  setIsComplex(true);
+                }}
+                className={`py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  isComplex
+                    ? 'bg-purple-500/25 border border-purple-400 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.4)] scale-[1.01]'
+                    : 'text-slate-400 hover:text-white bg-transparent'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <span>المستوى المتقدم (Advanced)</span>
+              </button>
+            </div>
+          </div>
+
           {/* Rounds & Level Grid */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {/* Rounds Selector */}
@@ -1212,8 +1249,13 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
               <span className="font-mono font-black text-sm text-white">
                 {currentRound + 1} / {questions.length}
               </span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                isComplex ? 'bg-purple-500/20 text-purple-300 border-purple-400/40' : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+              }`}>
+                مستوى {selectedLevel} {isComplex ? '• متقدم' : '• سهل'}
+              </span>
               {questions[currentRound]?.displayTitle && (
-                <span className="text-[10px] text-slate-400 hidden sm:inline">
+                <span className="text-[10px] text-slate-400 hidden md:inline">
                   ({questions[currentRound].displayTitle})
                 </span>
               )}
