@@ -214,10 +214,14 @@ app.post("/api/generate-ai-questions", async (req, res) => {
       return res.json({ success: true, source: "talmas_bank", questions });
     }
 
-    // For Level 2 Easy, serve directly from the 20-question Level 2 Easy bank
-    if (level === 2 && !isComplex) {
-      const questions = fetchQuestionsForLevel(2, false, count);
-      return res.json({ success: true, source: "talmas_level_2_easy_bank", questions });
+    // For Level 2 (Easy & Advanced), serve directly from the 20-question Level 2 official banks
+    if (level === 2) {
+      const questions = fetchQuestionsForLevel(2, isComplex, count);
+      return res.json({
+        success: true,
+        source: isComplex ? "talmas_level_2_advanced_bank" : "talmas_level_2_easy_bank",
+        questions,
+      });
     }
 
     const ai = getGenAI();

@@ -1301,8 +1301,312 @@ export function getLevel2StandardQuestions(count = 5): Question[] {
   });
 }
 
+// 20 Exact 1D 5R Questions for Level 2 Advanced / Complex (المستوى الثاني - الوضع المتقدم)
+export const TALMAS_LEVEL_2_ADVANCED_BANK: Omit<Question, 'id'>[] = [
+  // 1: 1 + 6 + 2 - 4 - 1 = 4
+  {
+    displayTitle: 'Level 2 Advanced - Question 1',
+    promptSeq: [
+      { type: 'number', value: '1' },
+      { type: 'number', value: '6' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '-4' },
+      { type: 'number', value: '-1' },
+    ],
+    answer: '4',
+    timeLimitSeconds: 15,
+  },
+  // 2: 5 - 1 + 3 - 4 + 2 = 5
+  {
+    displayTitle: 'Level 2 Advanced - Question 2',
+    promptSeq: [
+      { type: 'number', value: '5' },
+      { type: 'number', value: '-1' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-4' },
+      { type: 'number', value: '2' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 3: 6 - 2 + 1 - 3 + 4 = 6
+  {
+    displayTitle: 'Level 2 Advanced - Question 3',
+    promptSeq: [
+      { type: 'number', value: '6' },
+      { type: 'number', value: '-2' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '-3' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '6',
+    timeLimitSeconds: 15,
+  },
+  // 4: 7 - 3 + 2 - 3 + 2 = 5
+  {
+    displayTitle: 'Level 2 Advanced - Question 4',
+    promptSeq: [
+      { type: 'number', value: '7' },
+      { type: 'number', value: '-3' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '-3' },
+      { type: 'number', value: '2' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 5: 8 - 4 + 3 - 4 + 6 = 9
+  {
+    displayTitle: 'Level 2 Advanced - Question 5',
+    promptSeq: [
+      { type: 'number', value: '8' },
+      { type: 'number', value: '-4' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-4' },
+      { type: 'number', value: '6' },
+    ],
+    answer: '9',
+    timeLimitSeconds: 15,
+  },
+  // 6: 9 - 4 - 2 + 7 - 5 = 5
+  {
+    displayTitle: 'Level 2 Advanced - Question 6',
+    promptSeq: [
+      { type: 'number', value: '9' },
+      { type: 'number', value: '-4' },
+      { type: 'number', value: '-2' },
+      { type: 'number', value: '7' },
+      { type: 'number', value: '-5' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 7: 4 + 1 + 4 - 9 + 2 = 2
+  {
+    displayTitle: 'Level 2 Advanced - Question 7',
+    promptSeq: [
+      { type: 'number', value: '4' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '-9' },
+      { type: 'number', value: '2' },
+    ],
+    answer: '2',
+    timeLimitSeconds: 15,
+  },
+  // 8: 7 - 5 + 3 + 4 - 5 = 4
+  {
+    displayTitle: 'Level 2 Advanced - Question 8',
+    promptSeq: [
+      { type: 'number', value: '7' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '-5' },
+    ],
+    answer: '4',
+    timeLimitSeconds: 15,
+  },
+  // 9: 7 - 6 + 3 + 1 + 4 = 9
+  {
+    displayTitle: 'Level 2 Advanced - Question 9',
+    promptSeq: [
+      { type: 'number', value: '7' },
+      { type: 'number', value: '-6' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '9',
+    timeLimitSeconds: 15,
+  },
+  // 10: 9 - 5 + 1 + 3 - 7 = 1
+  {
+    displayTitle: 'Level 2 Advanced - Question 10',
+    promptSeq: [
+      { type: 'number', value: '9' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-7' },
+    ],
+    answer: '1',
+    timeLimitSeconds: 15,
+  },
+  // 11: 3 + 2 - 5 + 1 + 2 = 3
+  {
+    displayTitle: 'Level 2 Advanced - Question 11',
+    promptSeq: [
+      { type: 'number', value: '3' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '2' },
+    ],
+    answer: '3',
+    timeLimitSeconds: 15,
+  },
+  // 12: 4 + 2 - 5 + 4 + 1 = 6
+  {
+    displayTitle: 'Level 2 Advanced - Question 12',
+    promptSeq: [
+      { type: 'number', value: '4' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '1' },
+    ],
+    answer: '6',
+    timeLimitSeconds: 15,
+  },
+  // 13: 8 - 7 + 5 - 6 + 3 = 3
+  {
+    displayTitle: 'Level 2 Advanced - Question 13',
+    promptSeq: [
+      { type: 'number', value: '8' },
+      { type: 'number', value: '-7' },
+      { type: 'number', value: '5' },
+      { type: 'number', value: '-6' },
+      { type: 'number', value: '3' },
+    ],
+    answer: '3',
+    timeLimitSeconds: 15,
+  },
+  // 14: 2 + 4 - 3 + 1 - 4 = 0
+  {
+    displayTitle: 'Level 2 Advanced - Question 14',
+    promptSeq: [
+      { type: 'number', value: '2' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '-3' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '-4' },
+    ],
+    answer: '0',
+    timeLimitSeconds: 15,
+  },
+  // 15: 3 + 3 - 2 + 1 - 3 = 2
+  {
+    displayTitle: 'Level 2 Advanced - Question 15',
+    promptSeq: [
+      { type: 'number', value: '3' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-2' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '-3' },
+    ],
+    answer: '2',
+    timeLimitSeconds: 15,
+  },
+  // 16: 7 - 3 + 4 - 7 + 4 = 5
+  {
+    displayTitle: 'Level 2 Advanced - Question 16',
+    promptSeq: [
+      { type: 'number', value: '7' },
+      { type: 'number', value: '-3' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '-7' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 17: 5 - 1 + 3 - 4 + 2 = 5
+  {
+    displayTitle: 'Level 2 Advanced - Question 17',
+    promptSeq: [
+      { type: 'number', value: '5' },
+      { type: 'number', value: '-1' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-4' },
+      { type: 'number', value: '2' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 18: 8 - 4 + 2 - 5 + 4 = 5
+  {
+    displayTitle: 'Level 2 Advanced - Question 18',
+    promptSeq: [
+      { type: 'number', value: '8' },
+      { type: 'number', value: '-4' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 19: 9 - 7 + 5 - 3 + 4 = 8
+  {
+    displayTitle: 'Level 2 Advanced - Question 19',
+    promptSeq: [
+      { type: 'number', value: '9' },
+      { type: 'number', value: '-7' },
+      { type: 'number', value: '5' },
+      { type: 'number', value: '-3' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '8',
+    timeLimitSeconds: 15,
+  },
+  // 20: 2 + 6 - 4 + 1 - 3 = 2
+  {
+    displayTitle: 'Level 2 Advanced - Question 20',
+    promptSeq: [
+      { type: 'number', value: '2' },
+      { type: 'number', value: '6' },
+      { type: 'number', value: '-4' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '-3' },
+    ],
+    answer: '2',
+    timeLimitSeconds: 15,
+  },
+];
+
+// Memory of previously served indices across rounds for Level 2 Advanced
+let recentLevel2AdvancedIndices: number[] = [];
+
 /**
- * General Question Selector supporting Level 0 (Starter), Level 1 (TALMAS), Level 2 Easy, and other procedural levels.
+ * Returns count randomly selected questions from the 20-question Level 2 Advanced bank without replacement.
+ * Used for Level 2 Complex / Advanced mode (المستوى الثاني - الوضع المتقدم).
+ */
+export function getLevel2ComplexQuestions(count = 5): Question[] {
+  const total = TALMAS_LEVEL_2_ADVANCED_BANK.length;
+  const allIndices = Array.from({ length: total }, (_, i) => i);
+
+  let candidates = allIndices.filter((idx) => !recentLevel2AdvancedIndices.includes(idx));
+  if (candidates.length < count) {
+    recentLevel2AdvancedIndices = [];
+    candidates = allIndices;
+  }
+
+  const shuffledCandidates = shuffleArray(candidates);
+  const pickedIndices = shuffledCandidates.slice(0, Math.min(count, total));
+
+  recentLevel2AdvancedIndices = [...recentLevel2AdvancedIndices, ...pickedIndices];
+  if (recentLevel2AdvancedIndices.length >= total) {
+    recentLevel2AdvancedIndices = [...pickedIndices];
+  }
+
+  return pickedIndices.map((origIdx, orderIdx) => {
+    const q = TALMAS_LEVEL_2_ADVANCED_BANK[origIdx];
+    return {
+      ...q,
+      promptSeq: convertPromptSeqToTerms(q.promptSeq),
+      id: `talmas_lvl2_adv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}_${origIdx}_${orderIdx}`,
+      displayTitle: `المستوى 2 (متقدم) • مسألة #${origIdx + 1} (سؤال ${orderIdx + 1} من ${pickedIndices.length})`,
+    };
+  });
+}
+
+export function getLevel2Questions(count = 5, isComplex = false): Question[] {
+  return isComplex ? getLevel2ComplexQuestions(count) : getLevel2StandardQuestions(count);
+}
+
+/**
+ * General Question Selector supporting Level 0 (Starter), Level 1 (TALMAS), Level 2 (Easy & Advanced), and other procedural levels.
  */
 export function fetchQuestionsForLevel(level: number, isComplex = false, count = 5): Question[] {
   if (level === 0) {
@@ -1311,8 +1615,8 @@ export function fetchQuestionsForLevel(level: number, isComplex = false, count =
   if (level === 1) {
     return isComplex ? getLevel1ComplexQuestions(count) : getLevel1StandardQuestions(count);
   }
-  if (level === 2 && !isComplex) {
-    return getLevel2StandardQuestions(count);
+  if (level === 2) {
+    return isComplex ? getLevel2ComplexQuestions(count) : getLevel2StandardQuestions(count);
   }
 
   // Procedural levels for level >= 2
