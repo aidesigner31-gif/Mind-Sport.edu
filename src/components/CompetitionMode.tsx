@@ -132,6 +132,7 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
 
   // Refs for rock-solid closure safety and timer synchronization
   const seqIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const seqRunIdRef = useRef<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const roundStartTimestampRef = useRef<number>(0);
   const botTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -173,8 +174,9 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   // Clean up all active intervals and timeouts on unmount
   useEffect(() => {
     return () => {
+      seqRunIdRef.current += 1;
       if (timerRef.current) clearInterval(timerRef.current);
-      if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+      if (seqIntervalRef.current) clearTimeout(seqIntervalRef.current);
       if (botTimeoutRef.current) clearTimeout(botTimeoutRef.current);
       if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
     };
@@ -262,8 +264,10 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
   // Dedicated deterministic round starter (immune to closure bugs & skipped rounds)
   const startNewRound = (roundIdx: number) => {
     // 1. Clear any pending timers
+    seqRunIdRef.current += 1;
+    const thisRunId = seqRunIdRef.current;
     if (seqIntervalRef.current) {
-      clearInterval(seqIntervalRef.current);
+      clearTimeout(seqIntervalRef.current);
       seqIntervalRef.current = null;
     }
     if (timerRef.current) {
@@ -317,35 +321,44 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
       return;
     }
 
-    // 5. Play flash sequence
+    // 5. Play flash sequence with clear blank gap between every number
     setIsShowingSeq(true);
-    setActiveToken(q.promptSeq[0]);
-    try {
-      soundEngine.playTargetActivate();
-    } catch (e) {
-      console.error(e);
-    }
-    let idx = 1;
+    const blankMs = Math.max(60, Math.min(280, Math.round(flashMs * 0.25)));
+    const visibleMs = Math.max(60, flashMs - blankMs);
+    let idx = 0;
 
-    seqIntervalRef.current = setInterval(() => {
-      if (idx < q.promptSeq.length) {
-        setActiveToken(q.promptSeq[idx]);
-        try {
-          soundEngine.playTargetActivate();
-        } catch (e) {
-          console.error(e);
-        }
-        idx++;
-      } else {
+    const showNextToken = () => {
+      if (seqRunIdRef.current !== thisRunId) return;
+
+      if (idx >= q.promptSeq.length) {
         setActiveToken(null);
         setIsShowingSeq(false);
-        if (seqIntervalRef.current) {
-          clearInterval(seqIntervalRef.current);
-          seqIntervalRef.current = null;
-        }
+        seqIntervalRef.current = null;
         startRoundAnswerPhase();
+        return;
       }
-    }, flashMs);
+
+      // Show number
+      setActiveToken(q.promptSeq[idx]);
+      try {
+        soundEngine.playTargetActivate();
+      } catch (e) {
+        console.error(e);
+      }
+
+      // Hide number (blank gap) before moving to next number
+      seqIntervalRef.current = setTimeout(() => {
+        if (seqRunIdRef.current !== thisRunId) return;
+        setActiveToken(null);
+        idx++;
+
+        seqIntervalRef.current = setTimeout(() => {
+          showNextToken();
+        }, blankMs);
+      }, visibleMs);
+    };
+
+    showNextToken();
   };
 
   // Answer phase timer countdown
@@ -1293,7 +1306,9 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
                   roundRevealed ? 'cursor-pointer hover:scale-105 active:scale-95' : 'pointer-events-none'
                 } ${
                   isShowingSeq
-                    ? 'bg-gradient-to-tr from-cyan-950 via-slate-900 to-purple-950 border-3 sm:border-4 border-amber-400 shadow-[0_0_40px_rgba(245,158,11,0.7)] scale-105'
+                    ? activeToken
+                      ? 'bg-gradient-to-tr from-cyan-950 via-slate-900 to-purple-950 border-3 sm:border-4 border-amber-400 shadow-[0_0_40px_rgba(245,158,11,0.7)] scale-105'
+                      : 'bg-slate-950 border-3 sm:border-4 border-slate-700/60 shadow-[0_0_20px_rgba(0,0,0,0.9)]'
                     : roundRevealed
                     ? 'bg-gradient-to-tr from-emerald-950 via-slate-900 to-emerald-900 border-3 sm:border-4 border-emerald-400 shadow-[0_0_40px_rgba(16,185,129,0.7)] animate-pulse'
                     : 'bg-slate-950/95 border-3 sm:border-4 border-cyan-400/80 shadow-[0_0_30px_rgba(6,182,212,0.5)]'
@@ -1301,22 +1316,20 @@ export const CompetitionMode: React.FC<CompetitionModeProps> = ({ onBackToMenu, 
               >
                 {/* Secondary inner ring with ambient depth */}
                 <div className="w-full h-full rounded-full border border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden bg-radial from-slate-800/60 to-slate-950 shadow-inner">
-                  {/* Flashing content - prominently enlarged for clear visibility */}
+                  {/* Flashing content - completely blank during the gap between numbers */}
                   {isShowingSeq ? (
-                    <div className="flex flex-col items-center justify-center animate-pulse">
-                      <span className="text-[10px] sm:text-xs font-bold text-amber-400 uppercase tracking-widest mb-0.5 sm:mb-1">
-                        انتبه للرقم!
-                      </span>
-                      <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_30px_rgba(245,158,11,1)]">
-                        {activeToken ? (
-                          activeToken.value.startsWith('-')
+                    activeToken ? (
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-[10px] sm:text-xs font-bold text-amber-400 uppercase tracking-widest mb-0.5 sm:mb-1">
+                          انتبه للرقم!
+                        </span>
+                        <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-mono tracking-tight text-white drop-shadow-[0_0_30px_rgba(245,158,11,1)]">
+                          {activeToken.value.startsWith('-')
                             ? activeToken.value
-                            : `+${activeToken.value}`
-                        ) : (
-                          '...'
-                        )}
-                      </span>
-                    </div>
+                            : `+${activeToken.value}`}
+                        </span>
+                      </div>
+                    ) : null
                   ) : roundRevealed ? (
                     <div className="flex flex-col items-center justify-center animate-bounce">
                       <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-0.5 sm:mb-1">

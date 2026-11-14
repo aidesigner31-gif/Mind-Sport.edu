@@ -585,11 +585,11 @@ export const ThreeBoxingMachine: React.FC<ThreeBoxingMachineProps> = ({
                   <span className="truncate px-1 drop-shadow-[0_0_8px_currentColor]">
                     {displayedValue}
                   </span>
-                ) : (
+                ) : interactive ? (
                   <span className="text-cyan-400/40 text-base sm:text-lg font-black animate-pulse">
                     _
                   </span>
-                )}
+                ) : null}
 
                 {/* Optional Clear Button anchored in corner without changing rectangle size */}
                 {!activeToken && !isSubmitted && userInputDigits && onClear && (

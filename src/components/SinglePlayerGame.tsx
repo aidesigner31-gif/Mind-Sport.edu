@@ -124,7 +124,7 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
   useEffect(() => {
     if (!isPlaying || isCountdownActive || isMatchOver || questions.length === 0 || currentQIndex >= questions.length) return;
 
-    if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+    if (seqIntervalRef.current) clearTimeout(seqIntervalRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
 
     const currQ = questions[currentQIndex];
@@ -140,28 +140,41 @@ export const SinglePlayerGame: React.FC<SinglePlayerGameProps> = ({ theme, onBac
       return;
     }
 
-    // Sequence Player Loop: Show first token immediately
-    setActiveToken(currQ.promptSeq[0]);
-    soundEngine.playTargetActivate();
+    // Sequence Player Loop with blank gap between consecutive flashes
+    const blankMs = Math.max(60, Math.min(280, Math.round(flashMs * 0.25)));
+    const visibleMs = Math.max(60, flashMs - blankMs);
+    let seqIdx = 0;
+    let isCancelled = false;
 
-    let seqIdx = 1;
-    seqIntervalRef.current = setInterval(() => {
-      if (seqIdx < currQ.promptSeq.length) {
-        const token = currQ.promptSeq[seqIdx];
-        setActiveToken(token);
-        soundEngine.playTargetActivate();
-        seqIdx++;
-      } else {
-        // Clear active card when all numbers have been shown
+    const showNextToken = () => {
+      if (isCancelled) return;
+      if (seqIdx >= currQ.promptSeq.length) {
         setActiveToken(null);
         setIsShowingSequence(false);
-        if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+        seqIntervalRef.current = null;
         startAnswerCountdown(qTimeLimit);
+        return;
       }
-    }, flashMs);
+
+      setActiveToken(currQ.promptSeq[seqIdx]);
+      soundEngine.playTargetActivate();
+
+      seqIntervalRef.current = setTimeout(() => {
+        if (isCancelled) return;
+        setActiveToken(null);
+        seqIdx++;
+
+        seqIntervalRef.current = setTimeout(() => {
+          showNextToken();
+        }, blankMs);
+      }, visibleMs);
+    };
+
+    showNextToken();
 
     return () => {
-      if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+      isCancelled = true;
+      if (seqIntervalRef.current) clearTimeout(seqIntervalRef.current);
     };
   }, [currentQIndex, questions, isPlaying, isCountdownActive, flashMs, qTimeLimit]);
 

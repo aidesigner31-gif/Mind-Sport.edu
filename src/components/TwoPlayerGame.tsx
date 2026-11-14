@@ -177,7 +177,7 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
   useEffect(() => {
     if (!isPlaying || isCountdownActive || isGameOver || questions.length === 0 || currentQIndex >= questions.length) return;
 
-    if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+    if (seqIntervalRef.current) clearTimeout(seqIntervalRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
 
     const q = questions[currentQIndex];
@@ -197,25 +197,40 @@ export const TwoPlayerGame: React.FC<TwoPlayerGameProps> = ({
       return;
     }
 
-    setActiveToken(q.promptSeq[0]);
-    soundEngine.playTargetActivate();
-    let idx = 1;
+    const blankMs = Math.max(60, Math.min(280, Math.round(flashMs * 0.25)));
+    const visibleMs = Math.max(60, flashMs - blankMs);
+    let idx = 0;
+    let isCancelled = false;
 
-    seqIntervalRef.current = setInterval(() => {
-      if (idx < q.promptSeq.length) {
-        setActiveToken(q.promptSeq[idx]);
-        soundEngine.playTargetActivate();
-        idx++;
-      } else {
+    const showNextToken = () => {
+      if (isCancelled) return;
+      if (idx >= q.promptSeq.length) {
         setActiveToken(null);
         setIsShowingSeq(false);
-        if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+        seqIntervalRef.current = null;
         startRoundCountdown(qTimeLimit);
+        return;
       }
-    }, flashMs);
+
+      setActiveToken(q.promptSeq[idx]);
+      soundEngine.playTargetActivate();
+
+      seqIntervalRef.current = setTimeout(() => {
+        if (isCancelled) return;
+        setActiveToken(null);
+        idx++;
+
+        seqIntervalRef.current = setTimeout(() => {
+          showNextToken();
+        }, blankMs);
+      }, visibleMs);
+    };
+
+    showNextToken();
 
     return () => {
-      if (seqIntervalRef.current) clearInterval(seqIntervalRef.current);
+      isCancelled = true;
+      if (seqIntervalRef.current) clearTimeout(seqIntervalRef.current);
     };
   }, [currentQIndex, questions, isPlaying, isCountdownActive, flashMs, qTimeLimit]);
 
