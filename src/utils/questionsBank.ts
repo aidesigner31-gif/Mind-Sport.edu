@@ -1001,8 +1001,308 @@ export function getLevel1Questions(count = 5, isComplex = false): Question[] {
   return isComplex ? getLevel1ComplexQuestions(count) : getLevel1StandardQuestions(count);
 }
 
+// 20 Exact 1D 5R Questions for Level 2 Easy (المستوى الثاني - الوضع السهل)
+export const TALMAS_LEVEL_2_EASY_BANK: Omit<Question, 'id'>[] = [
+  // 1: 7 - 5 + 4 - 5 + 4 = 5
+  {
+    displayTitle: 'Level 2 Easy - Question 1',
+    promptSeq: [
+      { type: 'number', value: '7' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 2: 8 - 6 + 3 + 4 - 7 = 2
+  {
+    displayTitle: 'Level 2 Easy - Question 2',
+    promptSeq: [
+      { type: 'number', value: '8' },
+      { type: 'number', value: '-6' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '-7' },
+    ],
+    answer: '2',
+    timeLimitSeconds: 15,
+  },
+  // 3: 9 - 8 + 3 + 2 - 6 = 0
+  {
+    displayTitle: 'Level 2 Easy - Question 3',
+    promptSeq: [
+      { type: 'number', value: '9' },
+      { type: 'number', value: '-8' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '-6' },
+    ],
+    answer: '0',
+    timeLimitSeconds: 15,
+  },
+  // 4: 9 - 5 + 3 - 5 + 4 = 6
+  {
+    displayTitle: 'Level 2 Easy - Question 4',
+    promptSeq: [
+      { type: 'number', value: '9' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '6',
+    timeLimitSeconds: 15,
+  },
+  // 5: 6 + 3 - 5 + 1 + 4 = 9
+  {
+    displayTitle: 'Level 2 Easy - Question 5',
+    promptSeq: [
+      { type: 'number', value: '6' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '9',
+    timeLimitSeconds: 15,
+  },
+  // 6: 4 + 2 + 3 - 5 + 2 = 6
+  {
+    displayTitle: 'Level 2 Easy - Question 6',
+    promptSeq: [
+      { type: 'number', value: '4' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '2' },
+    ],
+    answer: '6',
+    timeLimitSeconds: 15,
+  },
+  // 7: 1 + 4 + 3 - 5 + 3 = 6
+  {
+    displayTitle: 'Level 2 Easy - Question 7',
+    promptSeq: [
+      { type: 'number', value: '1' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '3' },
+    ],
+    answer: '6',
+    timeLimitSeconds: 15,
+  },
+  // 8: 2 + 3 + 2 - 5 + 4 = 6
+  {
+    displayTitle: 'Level 2 Easy - Question 8',
+    promptSeq: [
+      { type: 'number', value: '2' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '4' },
+    ],
+    answer: '6',
+    timeLimitSeconds: 15,
+  },
+  // 9: 3 + 2 + 3 - 5 + 3 = 6
+  {
+    displayTitle: 'Level 2 Easy - Question 9',
+    promptSeq: [
+      { type: 'number', value: '3' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '3' },
+    ],
+    answer: '6',
+    timeLimitSeconds: 15,
+  },
+  // 10: 4 + 1 + 4 - 5 + 1 = 5
+  {
+    displayTitle: 'Level 2 Easy - Question 10',
+    promptSeq: [
+      { type: 'number', value: '4' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '1' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 11: 1 + 6 - 5 + 3 - 5 = 0
+  {
+    displayTitle: 'Level 2 Easy - Question 11',
+    promptSeq: [
+      { type: 'number', value: '1' },
+      { type: 'number', value: '6' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-5' },
+    ],
+    answer: '0',
+    timeLimitSeconds: 15,
+  },
+  // 12: 2 + 7 - 6 + 3 + 2 = 8
+  {
+    displayTitle: 'Level 2 Easy - Question 12',
+    promptSeq: [
+      { type: 'number', value: '2' },
+      { type: 'number', value: '7' },
+      { type: 'number', value: '-6' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '2' },
+    ],
+    answer: '8',
+    timeLimitSeconds: 15,
+  },
+  // 13: 3 + 6 - 8 + 4 + 2 = 7
+  {
+    displayTitle: 'Level 2 Easy - Question 13',
+    promptSeq: [
+      { type: 'number', value: '3' },
+      { type: 'number', value: '6' },
+      { type: 'number', value: '-8' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '2' },
+    ],
+    answer: '7',
+    timeLimitSeconds: 15,
+  },
+  // 14: 8 - 1 - 5 + 2 + 1 = 5
+  {
+    displayTitle: 'Level 2 Easy - Question 14',
+    promptSeq: [
+      { type: 'number', value: '8' },
+      { type: 'number', value: '-1' },
+      { type: 'number', value: '-5' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '1' },
+    ],
+    answer: '5',
+    timeLimitSeconds: 15,
+  },
+  // 15: 2 + 4 - 6 + 3 + 6 = 9
+  {
+    displayTitle: 'Level 2 Easy - Question 15',
+    promptSeq: [
+      { type: 'number', value: '2' },
+      { type: 'number', value: '4' },
+      { type: 'number', value: '-6' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '6' },
+    ],
+    answer: '9',
+    timeLimitSeconds: 15,
+  },
+  // 16: 9 - 8 + 3 + 2 - 5 = 1
+  {
+    displayTitle: 'Level 2 Easy - Question 16',
+    promptSeq: [
+      { type: 'number', value: '9' },
+      { type: 'number', value: '-8' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '-5' },
+    ],
+    answer: '1',
+    timeLimitSeconds: 15,
+  },
+  // 17: 6 + 3 - 7 + 3 + 1 = 6
+  {
+    displayTitle: 'Level 2 Easy - Question 17',
+    promptSeq: [
+      { type: 'number', value: '6' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-7' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '1' },
+    ],
+    answer: '6',
+    timeLimitSeconds: 15,
+  },
+  // 18: 9 - 6 + 2 + 1 - 6 = 0
+  {
+    displayTitle: 'Level 2 Easy - Question 18',
+    promptSeq: [
+      { type: 'number', value: '9' },
+      { type: 'number', value: '-6' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '1' },
+      { type: 'number', value: '-6' },
+    ],
+    answer: '0',
+    timeLimitSeconds: 15,
+  },
+  // 19: 9 - 8 + 3 + 2 + 1 = 7
+  {
+    displayTitle: 'Level 2 Easy - Question 19',
+    promptSeq: [
+      { type: 'number', value: '9' },
+      { type: 'number', value: '-8' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '1' },
+    ],
+    answer: '7',
+    timeLimitSeconds: 15,
+  },
+  // 20: 4 + 2 + 3 - 8 + 3 = 4
+  {
+    displayTitle: 'Level 2 Easy - Question 20',
+    promptSeq: [
+      { type: 'number', value: '4' },
+      { type: 'number', value: '2' },
+      { type: 'number', value: '3' },
+      { type: 'number', value: '-8' },
+      { type: 'number', value: '3' },
+    ],
+    answer: '4',
+    timeLimitSeconds: 15,
+  },
+];
+
+// Memory of previously served indices across rounds for Level 2 Easy
+let recentLevel2EasyIndices: number[] = [];
+
 /**
- * General Question Selector supporting Level 0 (Starter), Level 1 (TALMAS) and other procedural levels.
+ * Returns count randomly selected questions from the 20-question Level 2 Easy bank (1D 5R) without replacement.
+ * Used for Level 2 Standard / Easy mode (المستوى الثاني - الوضع السهل).
+ */
+export function getLevel2StandardQuestions(count = 5): Question[] {
+  const total = TALMAS_LEVEL_2_EASY_BANK.length;
+  const allIndices = Array.from({ length: total }, (_, i) => i);
+
+  let candidates = allIndices.filter((idx) => !recentLevel2EasyIndices.includes(idx));
+  if (candidates.length < count) {
+    recentLevel2EasyIndices = [];
+    candidates = allIndices;
+  }
+
+  const shuffledCandidates = shuffleArray(candidates);
+  const pickedIndices = shuffledCandidates.slice(0, Math.min(count, total));
+
+  recentLevel2EasyIndices = [...recentLevel2EasyIndices, ...pickedIndices];
+  if (recentLevel2EasyIndices.length >= total) {
+    recentLevel2EasyIndices = [...pickedIndices];
+  }
+
+  return pickedIndices.map((origIdx, orderIdx) => {
+    const q = TALMAS_LEVEL_2_EASY_BANK[origIdx];
+    return {
+      ...q,
+      promptSeq: convertPromptSeqToTerms(q.promptSeq),
+      id: `talmas_lvl2_easy_${Date.now()}_${Math.random().toString(36).slice(2, 7)}_${origIdx}_${orderIdx}`,
+      displayTitle: `المستوى 2 (سهل) • مسألة #${origIdx + 1} (سؤال ${orderIdx + 1} من ${pickedIndices.length})`,
+    };
+  });
+}
+
+/**
+ * General Question Selector supporting Level 0 (Starter), Level 1 (TALMAS), Level 2 Easy, and other procedural levels.
  */
 export function fetchQuestionsForLevel(level: number, isComplex = false, count = 5): Question[] {
   if (level === 0) {
@@ -1010,6 +1310,9 @@ export function fetchQuestionsForLevel(level: number, isComplex = false, count =
   }
   if (level === 1) {
     return isComplex ? getLevel1ComplexQuestions(count) : getLevel1StandardQuestions(count);
+  }
+  if (level === 2 && !isComplex) {
+    return getLevel2StandardQuestions(count);
   }
 
   // Procedural levels for level >= 2

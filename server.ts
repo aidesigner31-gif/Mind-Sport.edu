@@ -1,4 +1,5 @@
 import express from "express";
+import http from "http";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
@@ -213,6 +214,12 @@ app.post("/api/generate-ai-questions", async (req, res) => {
       return res.json({ success: true, source: "talmas_bank", questions });
     }
 
+    // For Level 2 Easy, serve directly from the 20-question Level 2 Easy bank
+    if (level === 2 && !isComplex) {
+      const questions = fetchQuestionsForLevel(2, false, count);
+      return res.json({ success: true, source: "talmas_level_2_easy_bank", questions });
+    }
+
     const ai = getGenAI();
 
     if (!ai) {
@@ -332,13 +339,34 @@ Student Match Log Data: ${JSON.stringify(logs)}`,
 });
 
 async function startServer() {
+  const httpServer = http.createServer(app);
+
   // Vite middleware setup
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
+    let viteMiddleware: any = null;
+    const viteReady = createViteServer({
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === "true" ? false : { server: httpServer },
+      },
       appType: "spa",
+    })
+      .then((vite) => {
+        viteMiddleware = vite.middlewares;
+      })
+      .catch((err) => {
+        console.error("Failed to initialize Vite dev server:", err);
+        throw err;
+      });
+
+    app.use(async (req, res, next) => {
+      try {
+        await viteReady;
+        return viteMiddleware(req, res, next);
+      } catch (err) {
+        next(err);
+      }
     });
-    app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
@@ -347,7 +375,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Mind Sport server running on http://0.0.0.0:${PORT}`);
   });
 }
